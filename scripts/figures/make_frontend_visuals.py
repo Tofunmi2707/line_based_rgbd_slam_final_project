@@ -1,8 +1,23 @@
 from __future__ import annotations
 
-# Inspiration: project frontend visualisation workflow built around the
-# implemented V3 geometric-filter pipeline; raw/rejected match rendering and
-# report-specific file organisation are handled here for dissertation figures.
+"""
+Generate front-end visualisation figures for the dissertation.
+
+This script runs the selected front-end variant on a representative frame pair
+and saves the main visual outputs used in the report. It is intended to produce:
+- CLAHE before/after comparison,
+- LSD line overlay,
+- raw line-match visualisation,
+- filtered line-match visualisation,
+- rejected-match visualisation.
+
+Inspiration:
+- The script is built around the project’s implemented V3 geometric-filter line
+  front end.
+- The separation of raw, filtered, and rejected matches was added within the
+  present project so that the effect of the filtering stage can be shown clearly
+  in the dissertation.
+"""
 
 from pathlib import Path
 import sys
@@ -24,8 +39,17 @@ def save_rejected_match_visual(
     out_dir: Path,
     filename: str = "rejected_matches.png",
 ) -> Path:
-    # Inspiration: project-specific separation of raw/filtered/rejected match
-    # sets so the filtering effect can be shown honestly in the report.
+    """
+    Save a visualisation of matches rejected by the geometric filter.
+
+    Args:
+        result: Front-end result dictionary returned by the V3 front end.
+        out_dir: Output directory.
+        filename: Output image filename.
+
+    Returns:
+        Path to the saved rejected-match visualisation.
+    """
     rejected_matches = subtract_matches(
         result["raw_matches"],
         result["filtered_matches"],
@@ -46,9 +70,15 @@ def save_rejected_match_visual(
 
 
 def main() -> None:
-    # Inspiration: dissertation figure generation for the frontend evidence
-    # subsection; fr1_room is used because it gives the clearest detector and
-    # filtering visuals in the final report.
+    """
+    Generate the front-end figures for a representative benchmark frame pair.
+
+    The script uses `fr1_room` because it provides a strong visual example for
+    line detection, descriptor matching, and geometric filtering in the report.
+
+    Returns:
+        None
+    """
     dataset_name = "fr1_room"
     frame_idx = 100
 

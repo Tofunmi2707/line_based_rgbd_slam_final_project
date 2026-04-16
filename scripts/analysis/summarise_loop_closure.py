@@ -1,8 +1,21 @@
 from __future__ import annotations
 
-# Inspiration: NumPy-based summary statistics and matplotlib export;
-# project-specific loop-closure residual reporting and dissertation summary
-# outputs implemented for this project.
+"""
+Summarise loop-closure residual outputs and save report-ready figures.
+
+This script reads the saved loop-closure metrics produced by the backend stage
+and exports the main summary artefacts used in the dissertation. It is used to:
+- generate a residual summary table,
+- generate a plain-text summary,
+- save a before/after residual bar chart,
+- save a before/after trajectory plot.
+
+Inspiration:
+- NumPy-based summary statistics and matplotlib plotting.
+- The specific residual groupings, output files, and reporting structure were
+  integrated within the present project for the loop-closure evaluation section
+  of the dissertation.
+"""
 
 from pathlib import Path
 import csv
@@ -17,10 +30,28 @@ RESULTS_DIR = PROJECT_ROOT / "results"
 
 
 def safe_mean(x: np.ndarray) -> float:
+    """
+    Compute a mean safely for possibly empty arrays.
+
+    Args:
+        x: Input array.
+
+    Returns:
+        Mean value, or NaN if the array is empty.
+    """
     return float(np.mean(x)) if len(x) > 0 else float("nan")
 
 
 def safe_median(x: np.ndarray) -> float:
+    """
+    Compute a median safely for possibly empty arrays.
+
+    Args:
+        x: Input array.
+
+    Returns:
+        Median value, or NaN if the array is empty.
+    """
     return float(np.median(x)) if len(x) > 0 else float("nan")
 
 
@@ -31,8 +62,19 @@ def save_residual_table(
     loop_before: np.ndarray,
     loop_after: np.ndarray,
 ) -> None:
-    # Inspiration: examiner-facing CSV table export; columns chosen to match the
-    # loop-closure residual table used in the dissertation.
+    """
+    Save a CSV table of before/after residual statistics.
+
+    Args:
+        out_csv: Output CSV path.
+        odom_before: Odometry residuals before optimisation.
+        odom_after: Odometry residuals after optimisation.
+        loop_before: Loop residuals before optimisation.
+        loop_after: Loop residuals after optimisation.
+
+    Returns:
+        None
+    """
     rows = [
         [
             "odometry",
@@ -76,7 +118,21 @@ def save_summary_txt(
     loop_before: np.ndarray,
     loop_after: np.ndarray,
 ) -> None:
-    # Inspiration: plain-text audit trail for appendix/reproducibility.
+    """
+    Save a plain-text summary of loop-closure results.
+
+    Args:
+        out_txt: Output text-file path.
+        num_odom_edges: Number of odometry edges.
+        num_loop_edges: Number of loop edges.
+        odom_before: Odometry residuals before optimisation.
+        odom_after: Odometry residuals after optimisation.
+        loop_before: Loop residuals before optimisation.
+        loop_after: Loop residuals after optimisation.
+
+    Returns:
+        None
+    """
     with open(out_txt, "w", encoding="utf-8") as f:
         f.write("Loop closure summary\n")
         f.write("--------------------\n")
@@ -103,8 +159,19 @@ def save_before_after_residual_bar(
     loop_before: np.ndarray,
     loop_after: np.ndarray,
 ) -> None:
-    # Inspiration: summary bar chart; project-specific grouping chosen to show
-    # the relative effect of loop closure on odometry and loop constraints.
+    """
+    Save a summary bar chart of mean residuals before and after optimisation.
+
+    Args:
+        out_png: Output image path.
+        odom_before: Odometry residuals before optimisation.
+        odom_after: Odometry residuals after optimisation.
+        loop_before: Loop residuals before optimisation.
+        loop_after: Loop residuals after optimisation.
+
+    Returns:
+        None
+    """
     labels = [
         "Odometry mean\nbefore",
         "Odometry mean\nafter",
@@ -134,8 +201,18 @@ def save_before_after_trajectory_plot(
     poses_after: np.ndarray,
     gt_xy: np.ndarray | None = None,
 ) -> None:
-    # Inspiration: standard before/after trajectory visualisation; ground-truth
-    # overlay included when available for supporting interpretation.
+    """
+    Save a planar trajectory plot before and after loop closure.
+
+    Args:
+        out_png: Output image path.
+        poses_before: Planar poses before optimisation.
+        poses_after: Planar poses after optimisation.
+        gt_xy: Optional interpolated ground-truth planar trajectory.
+
+    Returns:
+        None
+    """
     plt.figure(figsize=(8, 6))
 
     if gt_xy is not None and len(gt_xy) > 0:
@@ -155,7 +232,7 @@ def save_before_after_trajectory_plot(
     )
 
     plt.xlabel("x (m)")
-    plt.ylabel("y (m)")
+    plt.ylabel("z (m)")
     plt.title("Trajectory before and after loop closure")
     plt.legend()
     plt.axis("equal")
@@ -166,7 +243,16 @@ def save_before_after_trajectory_plot(
 
 
 def load_metrics_file(npz_path: Path) -> dict:
-    # Inspiration: saved .npz metrics workflow used elsewhere in the project.
+    """
+    Load a saved loop-closure metrics file.
+
+    Args:
+        npz_path: Path to the metrics `.npz` file.
+
+    Returns:
+        Dictionary containing residual arrays, before/after poses, edge counts,
+        and optional ground-truth trajectory data.
+    """
     data = np.load(npz_path, allow_pickle=True)
 
     out = {
@@ -189,8 +275,23 @@ def load_metrics_file(npz_path: Path) -> dict:
 
 
 def find_latest_loop_metrics(results_dir: Path) -> tuple[Path, str, str] | None:
-    # Inspiration: project-specific results layout under
-    # results/<dataset>/<method>/loop_closure/...
+    """
+    Find the most relevant saved loop-closure metrics file under the results directory.
+
+    The expected project layout is:
+    results/<dataset>/<method>/loop_closure/...
+
+    Args:
+        results_dir: Root results directory.
+
+    Returns:
+        Tuple containing:
+        - metrics file path,
+        - dataset name,
+        - method name,
+
+        or None if no loop-closure metrics file is found.
+    """
     candidates: list[tuple[Path, str, str]] = []
 
     if not results_dir.exists():
@@ -231,6 +332,12 @@ def find_latest_loop_metrics(results_dir: Path) -> tuple[Path, str, str] | None:
 
 
 def main() -> None:
+    """
+    Generate the main loop-closure summary outputs from the saved metrics file.
+
+    Returns:
+        None
+    """
     found = find_latest_loop_metrics(RESULTS_DIR)
     if found is None:
         print(

@@ -1,8 +1,21 @@
 from __future__ import annotations
 
-# Inspiration: OpenCV CLAHE preprocessing and LSD line detection APIs;
-# project-specific frame sampling, line-count comparison, and dissertation
-# figure/table export are implemented here.
+"""
+Generate CLAHE comparison figures and line-count summaries for the report.
+
+This script compares grayscale images before and after CLAHE preprocessing and
+measures how many LSD line segments are detected in each case. It is used to
+support the front-end preprocessing subsection of the dissertation by producing:
+- side-by-side grayscale vs CLAHE figures,
+- line-count comparison CSV files,
+- grouped bar charts of line counts,
+- a short summary text file.
+
+Inspiration:
+- OpenCV CLAHE preprocessing and LSD line detection interfaces.
+- The chosen frame sampling, line-count comparison, and report-output structure
+  were integrated within the present project for the preprocessing analysis.
+"""
 
 from pathlib import Path
 import sys
@@ -24,8 +37,17 @@ def apply_clahe(
     clip_limit: float = 2.0,
     tile_grid_size: tuple[int, int] = (8, 8),
 ) -> np.ndarray:
-    # Inspiration: OpenCV CLAHE interface; parameters exposed here so the
-    # preprocessing settings used for the report are explicit.
+    """
+    Apply Contrast Limited Adaptive Histogram Equalisation.
+
+    Args:
+        img: Input grayscale image.
+        clip_limit: CLAHE clip limit.
+        tile_grid_size: CLAHE tile grid size.
+
+    Returns:
+        Contrast-enhanced grayscale image.
+    """
     clahe = cv2.createCLAHE(
         clipLimit=clip_limit,
         tileGridSize=tile_grid_size,
@@ -34,8 +56,16 @@ def apply_clahe(
 
 
 def detect_lines_lsd(img: np.ndarray) -> np.ndarray:
-    # Inspiration: OpenCV LSD detector interface; wrapped so the output is
-    # always safe to count, even when no lines are returned.
+    """
+    Detect line segments using OpenCV's Line Segment Detector.
+
+    Args:
+        img: Input grayscale image.
+
+    Returns:
+        Array of detected line segments in LSD format, or an empty array if no
+        lines are returned.
+    """
     lsd = cv2.createLineSegmentDetector(0)
     lines = lsd.detect(img)[0]
     if lines is None:
@@ -44,6 +74,15 @@ def detect_lines_lsd(img: np.ndarray) -> np.ndarray:
 
 
 def count_lines(img: np.ndarray) -> int:
+    """
+    Count the number of LSD line segments detected in an image.
+
+    Args:
+        img: Input grayscale image.
+
+    Returns:
+        Number of detected line segments.
+    """
     return len(detect_lines_lsd(img))
 
 
@@ -54,7 +93,19 @@ def save_side_by_side(
     title_left: str = "Original grayscale",
     title_right: str = "CLAHE",
 ) -> None:
-    # Inspiration: matplotlib side-by-side comparison layout for report figures.
+    """
+    Save a side-by-side comparison figure.
+
+    Args:
+        original: Original grayscale image.
+        enhanced: CLAHE-enhanced grayscale image.
+        out_path: Output figure path.
+        title_left: Title for the left panel.
+        title_right: Title for the right panel.
+
+    Returns:
+        None
+    """
     fig, axes = plt.subplots(1, 2, figsize=(10, 4))
     axes[0].imshow(original, cmap="gray")
     axes[0].set_title(title_left)
@@ -76,7 +127,19 @@ def save_count_plot(
     out_path: Path,
     dataset_name: str,
 ) -> None:
-    # Inspiration: grouped bar chart for direct no-CLAHE vs CLAHE comparison.
+    """
+    Save a grouped bar chart comparing line counts with and without CLAHE.
+
+    Args:
+        frame_indices: Analysed frame indices.
+        counts_raw: LSD line counts without CLAHE.
+        counts_clahe: LSD line counts with CLAHE.
+        out_path: Output figure path.
+        dataset_name: Dataset name for the chart title.
+
+    Returns:
+        None
+    """
     x = np.arange(len(frame_indices))
     width = 0.38
 
@@ -110,8 +173,16 @@ def save_count_plot(
 
 
 def main() -> None:
-    # Inspiration: dissertation figure generation for the preprocessing section.
-    # fr1_room is used because it provides a clearer hard-case frontend example.
+    """
+    Generate CLAHE comparison outputs for a representative dataset.
+
+    The script samples selected frames from a benchmark sequence, compares line
+    counts before and after CLAHE, saves per-frame visual comparisons, and
+    exports summary files.
+
+    Returns:
+        None
+    """
     dataset_name = "fr1_room"
     frame_indices = [20, 40, 60, 80, 100, 120]
 

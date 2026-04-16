@@ -1,12 +1,29 @@
+from __future__ import annotations
+
+"""
+Generate a rotating GIF from a fused point-cloud reconstruction.
+
+This script renders a saved point cloud from a fixed initial viewpoint and
+captures an orbiting sequence of frames, which are then exported as an animated
+GIF. The output is intended as a supplementary qualitative artefact for the
+dissertation and appendix.
+
+Inspiration:
+- Open3D visualiser and view-control APIs for point-cloud rendering.
+- The orbit-rendering sequence and GIF export workflow were integrated within
+  the present project for examiner-friendly visualisation of reconstructed
+  scenes.
+"""
+
 from pathlib import Path
+
 import imageio.v2 as imageio
 import numpy as np
 import open3d as o3d
 
-# Inspiration: Open3D visualiser and view-control API; orbit rendering sequence
-# and report-specific GIF export implemented for this project.
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
 
 def make_rotating_gif(
     ply_path: Path,
@@ -16,10 +33,39 @@ def make_rotating_gif(
     height: int = 960,
     num_frames: int = 72,
     point_size: float = 2.0,
-    front = (0.4, -0.5, -0.75),
-    up = (0.0, -1.0, 0.0),
+    front: tuple[float, float, float] = (0.4, -0.5, -0.75),
+    up: tuple[float, float, float] = (0.0, -1.0, 0.0),
     zoom: float = 0.55,
-):
+) -> None:
+    """
+    Render a rotating GIF from a saved point cloud.
+
+    The function:
+    1. loads the point cloud,
+    2. opens an off-screen Open3D visualiser,
+    3. sets a fixed initial viewpoint,
+    4. rotates the camera incrementally around the scene,
+    5. saves each rendered frame,
+    6. combines the frames into an animated GIF.
+
+    Args:
+        ply_path: Path to the input point-cloud file.
+        gif_path: Path to the output GIF file.
+        frame_dir: Directory in which the intermediate rendered frames are saved.
+        width: Render width in pixels.
+        height: Render height in pixels.
+        num_frames: Number of frames in the orbit sequence.
+        point_size: Rendered point size.
+        front: Initial camera front vector.
+        up: Initial camera up vector.
+        zoom: Initial camera zoom level.
+
+    Returns:
+        None
+
+    Raises:
+        RuntimeError: If the loaded point cloud is empty.
+    """
     frame_dir.mkdir(parents=True, exist_ok=True)
     gif_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -50,7 +96,7 @@ def make_rotating_gif(
 
     images = []
     for i in range(num_frames):
-        ctr.rotate(10.0, 0.0)   # clockwise horizontal orbit
+        ctr.rotate(10.0, 0.0)
         vis.poll_events()
         vis.update_renderer()
 
@@ -61,7 +107,14 @@ def make_rotating_gif(
     vis.destroy_window()
     imageio.mimsave(str(gif_path), images, duration=0.08)
 
-def main():
+
+def main() -> None:
+    """
+    Generate the rotating GIF for the selected reported reconstruction.
+
+    Returns:
+        None
+    """
     dataset_name = "fr1_desk"
     method_name = "v3_geom_filter"
 
@@ -71,6 +124,7 @@ def main():
 
     make_rotating_gif(ply_path, gif_path, frame_dir)
     print(f"Saved GIF to: {gif_path}")
+
 
 if __name__ == "__main__":
     main()

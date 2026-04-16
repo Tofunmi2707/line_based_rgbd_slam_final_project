@@ -1,8 +1,25 @@
 from __future__ import annotations
 
-# Inspiration: standard CSV summary processing and matplotlib bar-chart export;
-# project-specific aggregation, rejection-reason diagnosis, and dissertation
-# table generation implemented for this project.
+"""
+Summarise odometry debug outputs across datasets and pipeline variants.
+
+This script reads the saved odometry debug CSV files and trajectory evaluation
+outputs produced by the main pipeline, then generates summary tables and
+diagnostic plots for use in the dissertation.
+
+It is used to:
+- aggregate accepted and rejected frame-pair counts,
+- compute acceptance rates and average diagnostic quantities,
+- load per-run RMSE values,
+- create per-dataset comparison tables,
+- export a rejection-reason bar chart for the baseline failure analysis.
+
+Inspiration:
+- Standard CSV-based result aggregation and matplotlib chart generation.
+- The aggregation metrics, dataset/method grouping, and rejection-diagnosis
+  outputs were designed within the present project to support the odometry
+  comparison and failure-analysis sections of the report.
+"""
 
 from pathlib import Path
 import sys
@@ -19,8 +36,15 @@ SUMMARY_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def find_latest_debug_csv(run_dir: Path) -> Path | None:
-    # Inspiration: simple run-manifest style discovery; latest debug CSV is used
-    # so the summary reflects the final run in each dataset/method folder.
+    """
+    Find the most recent odometry debug CSV in a run directory.
+
+    Args:
+        run_dir: Directory containing odometry outputs for one dataset/method run.
+
+    Returns:
+        Path to the latest matching debug CSV, or None if no debug CSV exists.
+    """
     csv_files = sorted(run_dir.glob("odometry_debug_*.csv"))
     if not csv_files:
         return None
@@ -28,6 +52,16 @@ def find_latest_debug_csv(run_dir: Path) -> Path | None:
 
 
 def safe_float(x, default: float = 0.0) -> float:
+    """
+    Convert a value to float safely.
+
+    Args:
+        x: Input value.
+        default: Value returned if conversion fails.
+
+    Returns:
+        Converted float or the default value.
+    """
     try:
         return float(x)
     except Exception:
@@ -35,6 +69,16 @@ def safe_float(x, default: float = 0.0) -> float:
 
 
 def safe_int(x, default: int = 0) -> int:
+    """
+    Convert a value to int safely.
+
+    Args:
+        x: Input value.
+        default: Value returned if conversion fails.
+
+    Returns:
+        Converted integer or the default value.
+    """
     try:
         return int(x)
     except Exception:
@@ -42,8 +86,19 @@ def safe_int(x, default: int = 0) -> int:
 
 
 def read_debug_csv(csv_path: Path) -> dict:
-    # Inspiration: CSV DictReader pattern; project-specific summary metrics chosen
-    # to match the odometry tables and rejection-reason figures in the report.
+    """
+    Read one odometry debug CSV and compute summary statistics.
+
+    The returned metrics are chosen to support the dissertation tables and
+    odometry failure analysis.
+
+    Args:
+        csv_path: Path to the odometry debug CSV.
+
+    Returns:
+        Dictionary containing counts, averages, rejection-reason frequencies,
+        and the raw loaded rows.
+    """
     rows = []
     with open(csv_path, "r", encoding="utf-8", newline="") as f:
         reader = csv.DictReader(f)
@@ -98,11 +153,19 @@ def read_debug_csv(csv_path: Path) -> dict:
 
 
 def find_rmse(run_dir: Path) -> float | None:
-    # Inspiration: saved NumPy evaluation files from the project pipeline;
-    # RMSE is loaded here so summary tables align with the reported trajectory metric.
+    """
+    Load the saved trajectory RMSE for a run if available.
+
+    Args:
+        run_dir: Directory containing one dataset/method run.
+
+    Returns:
+        RMSE value in metres, or None if it cannot be loaded.
+    """
     npz_path = run_dir / "trajectory_eval.npz"
     if not npz_path.exists():
         return None
+
     try:
         import numpy as np
         data = np.load(npz_path, allow_pickle=True)
@@ -112,8 +175,18 @@ def find_rmse(run_dir: Path) -> float | None:
 
 
 def collect_runs(results_dir: Path) -> list[dict]:
-    # Inspiration: recursive folder summary workflow; project-specific directory
-    # convention is results/<dataset>/<method>/...
+    """
+    Collect odometry summaries for all dataset/method runs under the results directory.
+
+    The script assumes the directory convention:
+    results/<dataset>/<method>/...
+
+    Args:
+        results_dir: Root results directory.
+
+    Returns:
+        List of run-summary dictionaries.
+    """
     runs = []
 
     if not results_dir.exists():
@@ -144,8 +217,16 @@ def collect_runs(results_dir: Path) -> list[dict]:
 
 
 def save_rejection_bar_chart(run: dict, out_path: Path) -> None:
-    # Inspiration: matplotlib category bar charts; the rejection categories here
-    # are the project’s diagnostic mechanism for explaining pipeline failure modes.
+    """
+    Save a bar chart of rejection reasons for one run.
+
+    Args:
+        run: Run-summary dictionary.
+        out_path: Output image path.
+
+    Returns:
+        None
+    """
     counter = run["reject_counter"]
     if not counter:
         print(
@@ -170,6 +251,17 @@ def save_rejection_bar_chart(run: dict, out_path: Path) -> None:
 
 
 def write_csv_table(path: Path, headers: list[str], rows: list[list]) -> None:
+    """
+    Write a CSV table to disk.
+
+    Args:
+        path: Output CSV path.
+        headers: Header row.
+        rows: Data rows.
+
+    Returns:
+        None
+    """
     with open(path, "w", encoding="utf-8", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(headers)
@@ -177,8 +269,16 @@ def write_csv_table(path: Path, headers: list[str], rows: list[list]) -> None:
 
 
 def make_overall_counts_table(runs: list[dict], out_dir: Path) -> None:
-    # Inspiration: examiner-facing summary table; columns chosen to match the
-    # main odometry comparison section in the dissertation.
+    """
+    Save a CSV table summarising all collected runs.
+
+    Args:
+        runs: List of run-summary dictionaries.
+        out_dir: Output directory.
+
+    Returns:
+        None
+    """
     headers = [
         "dataset",
         "method",
@@ -225,7 +325,17 @@ def make_dataset_comparison_table(
     dataset_name: str,
     out_dir: Path,
 ) -> None:
-    # Inspiration: per-dataset variant table for direct V1/V2/V3 comparison.
+    """
+    Save a CSV table comparing methods for one dataset.
+
+    Args:
+        runs: List of run-summary dictionaries.
+        dataset_name: Dataset to summarise.
+        out_dir: Output directory.
+
+    Returns:
+        None
+    """
     dataset_runs = [r for r in runs if r["dataset"] == dataset_name]
     if not dataset_runs:
         return
@@ -276,8 +386,18 @@ def make_dataset_comparison_table(
 
 
 def choose_initial_run_for_rejection_chart(runs: list[dict]) -> dict | None:
-    # Inspiration: project-specific reporting priority; fr1_room / v1_centroid
-    # is preferred because it gives the clearest baseline failure diagnosis.
+    """
+    Choose the most informative run for the baseline rejection-reason chart.
+
+    The preferred order reflects the project reporting priority, with
+    fr1_room / v1_centroid used first when available.
+
+    Args:
+        runs: List of run-summary dictionaries.
+
+    Returns:
+        Selected run-summary dictionary, or None if no runs exist.
+    """
     preferred = [
         ("fr1_room", "v1_centroid"),
         ("fr1_desk", "v1_centroid"),
@@ -291,7 +411,15 @@ def choose_initial_run_for_rejection_chart(runs: list[dict]) -> dict | None:
 
 
 def print_markdown_tables(runs: list[dict]) -> None:
-    # Inspiration: quick copy-paste markdown output for notes and report drafting.
+    """
+    Print quick markdown tables for drafting and notes.
+
+    Args:
+        runs: List of run-summary dictionaries.
+
+    Returns:
+        None
+    """
     print("\nOVERALL COUNTS TABLE\n")
     print(
         "| Dataset | Method | Accepted | Rejected | "
@@ -322,6 +450,12 @@ def print_markdown_tables(runs: list[dict]) -> None:
 
 
 def main() -> None:
+    """
+    Generate odometry summary tables and the main rejection-reason chart.
+
+    Returns:
+        None
+    """
     runs = collect_runs(RESULTS_DIR)
 
     if not runs:

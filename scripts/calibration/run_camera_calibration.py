@@ -1,8 +1,22 @@
 from __future__ import annotations
 
-# Inspiration: OpenCV checkerboard calibration workflow (corner detection,
-# calibrateCamera, undistortion, reprojection analysis), with project-specific
-# output organisation, figure export, and report-ready summary files.
+"""
+Run checkerboard-based camera calibration and save report-ready outputs.
+
+This script performs a supporting calibration experiment for the dissertation.
+It:
+- loads checkerboard images from the local calibration-images folder,
+- detects checkerboard corners,
+- estimates the camera matrix and distortion coefficients,
+- computes per-image and mean reprojection error,
+- saves corner-detection figures, undistortion figures, and summary files.
+
+Inspiration:
+- OpenCV checkerboard calibration workflow, including checkerboard detection,
+  `calibrateCamera`, undistortion, and reprojection-error analysis.
+- The output organisation, figure styling, and summary-file generation were
+  integrated within the present project for examiner-friendly reporting.
+"""
 
 from pathlib import Path
 import glob
@@ -36,8 +50,23 @@ def draw_clean_chessboard_corners(
     circle_radius: int = 8,
     line_thickness: int = 4,
 ) -> np.ndarray:
-    # Inspiration: OpenCV drawing primitives; colour-coded row/column overlay
-    # implemented here for cleaner report figures.
+    """
+    Draw a clean checkerboard-corner overlay for report figures.
+
+    The overlay uses coloured row and column connections together with bold
+    corner markers to produce a clearer calibration figure than the default
+    OpenCV visualisation.
+
+    Args:
+        image: Input image.
+        corners: Detected checkerboard corners.
+        pattern_size: Checkerboard size as (columns, rows).
+        circle_radius: Radius of the visible corner marker.
+        line_thickness: Thickness of the row/column connecting lines.
+
+    Returns:
+        Colour image with the corner overlay.
+    """
     img = image.copy()
 
     if len(img.shape) == 2:
@@ -71,8 +100,22 @@ def detect_chessboard(
     gray: np.ndarray,
     pattern_size: tuple[int, int],
 ) -> tuple[bool, np.ndarray | None, str]:
-    # Inspiration: OpenCV findChessboardCornersSB and findChessboardCorners;
-    # fallback logic added here so calibration is more robust across image sets.
+    """
+    Detect checkerboard corners using OpenCV's SB detector with a fallback.
+
+    The script first tries `findChessboardCornersSB` when available, then falls
+    back to the standard `findChessboardCorners` plus `cornerSubPix`.
+
+    Args:
+        gray: Grayscale calibration image.
+        pattern_size: Checkerboard size as (columns, rows).
+
+    Returns:
+        Tuple containing:
+        - success flag,
+        - detected corners or None,
+        - name of the detector used.
+    """
     if USE_SB_DETECTOR and hasattr(cv2, "findChessboardCornersSB"):
         ret, corners = cv2.findChessboardCornersSB(gray, pattern_size, None)
         if ret:
@@ -96,8 +139,17 @@ def save_undistortion_figure(
     undistorted_bgr: np.ndarray,
     save_path: Path,
 ) -> None:
-    # Inspiration: matplotlib figure export; side-by-side report figure layout
-    # implemented here for dissertation-ready output.
+    """
+    Save a side-by-side original/undistorted figure.
+
+    Args:
+        original_bgr: Original BGR image.
+        undistorted_bgr: Undistorted BGR image.
+        save_path: Output figure path.
+
+    Returns:
+        None
+    """
     original_rgb = cv2.cvtColor(original_bgr, cv2.COLOR_BGR2RGB)
     undistorted_rgb = cv2.cvtColor(undistorted_bgr, cv2.COLOR_BGR2RGB)
 
@@ -119,8 +171,16 @@ def save_undistortion_figure(
 
 
 def save_reprojection_plot(errors: list[float], save_path: Path) -> None:
-    # Inspiration: standard matplotlib bar chart; mean-error overlay added here
-    # for clearer dissertation presentation.
+    """
+    Save a bar chart of per-image reprojection errors.
+
+    Args:
+        errors: Per-image reprojection errors in pixels.
+        save_path: Output figure path.
+
+    Returns:
+        None
+    """
     plt.figure(figsize=(10, 5), facecolor="white")
     ax = plt.gca()
 
@@ -165,7 +225,22 @@ def save_calibration_summary_txt(
     camera_matrix: np.ndarray,
     dist_coeffs: np.ndarray,
 ) -> None:
-    # Inspiration: examiner-facing plain-text summary for auditability.
+    """
+    Save a plain-text calibration summary.
+
+    Args:
+        save_path: Output summary path.
+        checkerboard: Checkerboard inner-corner dimensions.
+        total_images: Total number of calibration images found.
+        successful_detections: Number of successful checkerboard detections.
+        detector_names: Set of detector names used.
+        mean_error: Mean reprojection error in pixels.
+        camera_matrix: Estimated intrinsic camera matrix.
+        dist_coeffs: Estimated distortion coefficients.
+
+    Returns:
+        None
+    """
     with open(save_path, "w", encoding="utf-8") as f:
         f.write("Calibration summary\n")
         f.write("-------------------\n")
@@ -182,8 +257,23 @@ def save_calibration_summary_txt(
 
 
 def main() -> None:
-    # Inspiration: Zhang-style planar calibration workflow through OpenCV,
-    # adapted here to save all outputs in a dedicated report-results folder.
+    """
+    Run the checkerboard calibration workflow and save all main outputs.
+
+    The script:
+    1. loads calibration images,
+    2. detects checkerboard corners,
+    3. estimates camera intrinsics and distortion,
+    4. computes reprojection errors,
+    5. saves figures, parameter files, and a text summary.
+
+    Returns:
+        None
+
+    Raises:
+        FileNotFoundError: If no calibration images are found.
+        RuntimeError: If no valid checkerboard detections are obtained.
+    """
     objp = np.zeros((CHECKERBOARD[0] * CHECKERBOARD[1], 3), np.float32)
     objp[:, :2] = np.mgrid[0:CHECKERBOARD[0], 0:CHECKERBOARD[1]].T.reshape(-1, 2)
 
@@ -240,7 +330,12 @@ def main() -> None:
 
     flags = cv2.CALIB_FIX_K3
     ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(
-        objpoints, imgpoints, image_size, None, None, flags=flags
+        objpoints,
+        imgpoints,
+        image_size,
+        None,
+        None,
+        flags=flags,
     )
 
     print("Calibration RMS from OpenCV:", ret)
@@ -250,7 +345,11 @@ def main() -> None:
     per_image_errors = []
     for i in range(len(objpoints)):
         projected_points, _ = cv2.projectPoints(
-            objpoints[i], rvecs[i], tvecs[i], mtx, dist
+            objpoints[i],
+            rvecs[i],
+            tvecs[i],
+            mtx,
+            dist,
         )
         error = cv2.norm(imgpoints[i], projected_points, cv2.NORM_L2) / len(projected_points)
         per_image_errors.append(float(error))

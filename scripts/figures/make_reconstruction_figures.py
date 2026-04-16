@@ -1,8 +1,19 @@
 from __future__ import annotations
 
-# Inspiration: Open3D hidden-window point-cloud rendering and matplotlib-style
-# report figure composition; project-specific baseline/final comparison and
-# scene-vs-cloud figure generation are implemented here.
+"""
+Generate reconstruction comparison figures for the dissertation.
+
+This script renders saved point clouds from a fixed viewpoint and composes
+report-ready comparison figures. It is used to produce:
+- rendered point-cloud images for baseline and final methods,
+- a side-by-side baseline vs final reconstruction figure,
+- a side-by-side scene vs fused-cloud figure.
+
+Inspiration:
+- Open3D hidden-window rendering through the Visualizer and ViewControl APIs.
+- The figure layout and baseline/final comparison structure were integrated
+  within the present project for the reconstruction analysis section.
+"""
 
 from pathlib import Path
 import sys
@@ -19,7 +30,20 @@ from src.tum_io import load_rgb_sequence  # noqa: E402
 
 
 def load_rgb_frame(dataset_name: str, frame_idx: int) -> np.ndarray:
-    # Inspiration: project dataset-loading utilities; wrapped here for figure generation.
+    """
+    Load one RGB frame from the selected dataset.
+
+    Args:
+        dataset_name: Dataset name defined in the project configuration.
+        frame_idx: Frame index to load.
+
+    Returns:
+        Loaded RGB image in BGR format.
+
+    Raises:
+        IndexError: If the requested frame index is out of range.
+        FileNotFoundError: If the frame cannot be loaded.
+    """
     dataset_cfg = DATASETS[dataset_name]
     rgb_files = load_rgb_sequence(dataset_cfg.rgb_dir)
 
@@ -36,7 +60,16 @@ def load_rgb_frame(dataset_name: str, frame_idx: int) -> np.ndarray:
 
 
 def add_label(img_bgr: np.ndarray, label: str) -> np.ndarray:
-    # Inspiration: OpenCV text/rectangle drawing for report-ready figure labels.
+    """
+    Add a white label banner to the top of an image.
+
+    Args:
+        img_bgr: Input image in BGR format.
+        label: Text label to draw.
+
+    Returns:
+        Labelled image.
+    """
     out = img_bgr.copy()
     cv2.rectangle(out, (0, 0), (out.shape[1], 50), (255, 255, 255), -1)
     cv2.putText(
@@ -56,6 +89,16 @@ def resize_to_same_height(
     imgs: list[np.ndarray],
     target_height: int,
 ) -> list[np.ndarray]:
+    """
+    Resize a list of images to a common height while preserving aspect ratio.
+
+    Args:
+        imgs: Input images.
+        target_height: Desired output height.
+
+    Returns:
+        Resized images.
+    """
     resized = []
     for img in imgs:
         h, w = img.shape[:2]
@@ -82,8 +125,27 @@ def render_point_cloud_to_image(
     up: list[float] | None = None,
     zoom: float | None = None,
 ) -> None:
-    # Inspiration: Open3D Visualizer and ViewControl APIs; deterministic
-    # hidden-window rendering is used here so report figures are reproducible.
+    """
+    Render a point cloud to an image using an off-screen Open3D visualiser.
+
+    Args:
+        ply_path: Path to the input point-cloud file.
+        out_path: Output image path.
+        width: Render width in pixels.
+        height: Render height in pixels.
+        point_size: Rendered point size.
+        front: Camera front vector.
+        lookat: Camera look-at point.
+        up: Camera up vector.
+        zoom: Camera zoom level.
+
+    Returns:
+        None
+
+    Raises:
+        FileNotFoundError: If the point-cloud file is missing.
+        RuntimeError: If the point cloud contains no points.
+    """
     if not ply_path.exists():
         raise FileNotFoundError(f"Missing point cloud: {ply_path}")
 
@@ -137,7 +199,20 @@ def save_side_by_side(
     out_path: Path,
     height: int = 700,
 ) -> None:
-    # Inspiration: OpenCV image stacking for compact dissertation figures.
+    """
+    Save a side-by-side comparison image with labels.
+
+    Args:
+        left_bgr: Left image in BGR format.
+        right_bgr: Right image in BGR format.
+        left_label: Label for the left image.
+        right_label: Label for the right image.
+        out_path: Output image path.
+        height: Common output height.
+
+    Returns:
+        None
+    """
     left_l = add_label(left_bgr, left_label)
     right_l = add_label(right_bgr, right_label)
 
@@ -147,7 +222,19 @@ def save_side_by_side(
 
 
 def main() -> None:
-    # Inspiration: reconstruction comparison figures for the Results chapter.
+    """
+    Generate the main reconstruction comparison figures.
+
+    The script renders baseline and final fused clouds from the same viewpoint,
+    then saves:
+    - baseline rendered cloud,
+    - final rendered cloud,
+    - baseline vs final comparison figure,
+    - representative RGB scene vs final cloud figure.
+
+    Returns:
+        None
+    """
     dataset_name = "fr1_desk"
     baseline_method = "v1_centroid"
     final_method = "v3_geom_filter"
@@ -163,7 +250,6 @@ def main() -> None:
     baseline_img_path = out_dir / f"{dataset_name}_{baseline_method}_cloud.png"
     final_img_path = out_dir / f"{dataset_name}_{final_method}_cloud.png"
 
-    # Same viewpoint for both renders so the comparison is fair.
     front = [0.4, -0.5, -0.75]
     up = [0.0, -1.0, 0.0]
     zoom = 0.55
