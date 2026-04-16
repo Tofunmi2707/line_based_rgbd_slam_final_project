@@ -1,30 +1,31 @@
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.idea/
+
+# Virtual environments
+.venv/
+venv/
+env/
+slam_env/
+
+# IDE / OS
 .vscode/
+.idea/
 .DS_Store
 Thumbs.db
 
-# TUM RGB-D datasets kept locally only
-data/fr1_desk/
-data/fr1_room/
-data/fr1_xyz/
-data/fr2_large_with_loop/
+# Local benchmark datasets
+data/*
+!data/README.md
 
 # Generated outputs
 results/
-*.npz
+
+# Point clouds / media
 *.ply
 *.gif
-*.png
-*.jpg
-*.jpeg
 
-# Python/cache/env
-__pycache__/
-*.pyc
-.venv/
-venv/
-slam_env/
+# Jupyter
+.ipynb_checkpoints/
