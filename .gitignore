@@ -2,12 +2,18 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.venv/
-venv/
-env/
-slam_env/
 .idea/
 .vscode/
+.DS_Store
+Thumbs.db
+
+# TUM RGB-D datasets kept locally only
+data/fr1_desk/
+data/fr1_room/
+data/fr1_xyz/
+data/fr2_large_with_loop/
+
+# Generated outputs
 results/
 *.npz
 *.ply
@@ -15,5 +21,10 @@ results/
 *.png
 *.jpg
 *.jpeg
-.DS_Store
-Thumbs.db
+
+# Python/cache/env
+__pycache__/
+*.pyc
+.venv/
+venv/
+slam_env/
