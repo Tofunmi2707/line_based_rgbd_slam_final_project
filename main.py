@@ -1,5 +1,17 @@
 from __future__ import annotations
 
+"""
+Main entry point for running the line-based RGB-D odometry pipeline.
+
+This script selects a benchmark dataset and odometry variant, runs the
+front-end and odometry pipeline, optionally applies loop closure on the loop
+sequence, evaluates the estimated trajectory against benchmark ground truth,
+and attempts RGB-D point-cloud fusion for reconstruction.
+
+The script is intended as the primary execution entry point for the final
+reported experiments.
+"""
+
 from pathlib import Path
 
 from config import (
@@ -15,6 +27,20 @@ from src.reconstruction import fuse_rgbd_from_poses
 
 
 def main() -> None:
+    """
+    Run the selected dataset and odometry method through the full pipeline.
+
+    The function:
+    1. selects the dataset and odometry method,
+    2. creates and saves the run configuration,
+    3. executes frame-to-frame visual odometry,
+    4. runs loop closure when the loop sequence is selected,
+    5. evaluates trajectory RMSE after alignment to ground truth,
+    6. attempts multi-frame RGB-D fusion for reconstruction.
+
+    Returns:
+        None
+    """
     dataset_name = "fr2_large_with_loop"     # change as needed
     method_name = "v3_geom_filter"           # change as needed
 
