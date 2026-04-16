@@ -1,5 +1,19 @@
 from __future__ import annotations
 
+"""
+Configuration definitions for the line-based RGB-D SLAM project.
+
+This module defines:
+- dataset configuration records,
+- odometry/front-end configuration records,
+- loop-closure configuration records,
+- dataset-specific TUM RGB-D benchmark intrinsics,
+- helper utilities for saving run configurations alongside results.
+
+The configuration objects are used to keep reported experiments reproducible
+and to separate odometry settings from backend loop-closure settings.
+"""
+
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -9,6 +23,22 @@ import numpy as np
 
 @dataclass
 class DatasetConfig:
+    """
+    Store dataset paths and camera parameters for a benchmark sequence.
+
+    Attributes:
+        name: Dataset name used throughout the project.
+        dataset_dir: Root directory of the dataset.
+        rgb_dir: Directory containing RGB frames.
+        depth_dir: Directory containing depth frames.
+        groundtruth_path: Path to benchmark ground-truth trajectory.
+        assoc_path: Optional RGB-depth association file.
+        intrinsics: Camera intrinsic matrix used for projection/back-projection.
+        depth_scale: Depth scaling factor used by the dataset.
+        max_rgb_depth_dt: Maximum timestamp difference allowed for RGB–depth pairing.
+        freiburg_group: Freiburg sensor group label.
+        depth_correction_factor: Dataset-specific depth correction factor.
+    """
     name: str
     dataset_dir: Path
     rgb_dir: Path
@@ -24,6 +54,15 @@ class DatasetConfig:
 
 @dataclass
 class OdometryConfig:
+    """
+    Store front-end and odometry settings for the reported experiments.
+
+    The same core acceptance thresholds are intended to be reused across the
+    odometry comparison runs so that differences between V1, V2, and V3 arise
+    from correspondence representation and filtering strategy rather than from
+    changing acceptance rules.
+    """
+
     # Front-end / odometry settings
     max_lines: int = 1500
 
@@ -51,6 +90,13 @@ class OdometryConfig:
     method_name: str = "v2_lbd_endpoints"
 
     def to_serialisable_dict(self) -> dict[str, Any]:
+        """
+        Convert the odometry configuration to a JSON-safe dictionary.
+
+        Returns:
+            Dictionary representation of the configuration with paths converted
+            to strings where needed.
+        """
         data = asdict(self)
         data["output_dir"] = str(self.output_dir)
         return data
@@ -58,6 +104,12 @@ class OdometryConfig:
 
 @dataclass
 class LoopClosureConfig:
+    """
+    Store backend loop-closure and pose-graph optimisation settings.
+
+    These settings are kept separate from the odometry configuration so that the
+    loop-closure experiment can be reported as a distinct backend stage.
+    """
     min_frame_gap: int = 80
     pose_radius: float = 0.40
     max_candidates_per_frame: int = 1
@@ -72,10 +124,22 @@ class LoopClosureConfig:
     output_subdir: str = "loop_closure"
 
     def to_serialisable_dict(self) -> dict[str, Any]:
+        """
+        Convert the loop-closure configuration to a JSON-safe dictionary.
+
+        Returns:
+            Dictionary representation of the loop-closure configuration.
+        """
         return asdict(self)
 
 
 def _freiburg1_intrinsics() -> np.ndarray:
+    """
+    Return the TUM RGB-D Freiburg 1 colour-camera intrinsics.
+
+    Returns:
+        3 x 3 camera intrinsic matrix for Freiburg 1 sequences.
+    """
     return np.array(
         [
             [517.3, 0.0, 318.6],
@@ -87,6 +151,12 @@ def _freiburg1_intrinsics() -> np.ndarray:
 
 
 def _freiburg2_intrinsics() -> np.ndarray:
+    """
+    Return the TUM RGB-D Freiburg 2 colour-camera intrinsics.
+
+    Returns:
+        3 x 3 camera intrinsic matrix for Freiburg 2 sequences.
+    """
     return np.array(
         [
             [520.9, 0.0, 325.1],
@@ -104,6 +174,19 @@ def make_tum_dataset(
     freiburg_group: str,
     depth_correction_factor: float,
 ) -> DatasetConfig:
+    """
+    Build a dataset configuration for a TUM RGB-D sequence.
+
+    Args:
+        name: Dataset name.
+        dataset_dir: Root folder of the dataset.
+        intrinsics: Intrinsic camera matrix for the sequence.
+        freiburg_group: Freiburg sensor group label.
+        depth_correction_factor: Dataset-specific depth correction factor.
+
+    Returns:
+        DatasetConfig populated with the expected TUM folder structure.
+    """
     root = Path(dataset_dir)
     assoc_file = root / "rgb_depth_assoc.txt"
     assoc_path = assoc_file if assoc_file.exists() else None
@@ -159,6 +242,23 @@ def save_run_configs(
     odom_cfg: OdometryConfig,
     loop_cfg: LoopClosureConfig | None = None,
 ) -> None:
+    """
+    Save the configurations used for a run into the output directory.
+
+    This function writes separate JSON files for:
+    - dataset configuration,
+    - odometry/front-end configuration,
+    - loop-closure configuration, when used.
+
+    Args:
+        output_dir: Directory in which the configuration files should be saved.
+        dataset_cfg: Dataset configuration used for the run.
+        odom_cfg: Odometry configuration used for the run.
+        loop_cfg: Optional loop-closure configuration used for backend evaluation.
+
+    Returns:
+        None
+    """
     output_dir.mkdir(parents=True, exist_ok=True)
 
     dataset_dict = {
@@ -176,18 +276,24 @@ def save_run_configs(
         "depth_correction_factor": dataset_cfg.depth_correction_factor,
     }
 
-    with open(output_dir / "dataset_config_used.json",
-              "w",
-              encoding="utf-8") as f:
+    with open(
+        output_dir / "dataset_config_used.json",
+        "w",
+        encoding="utf-8",
+    ) as f:
         json.dump(dataset_dict, f, indent=2)
 
-    with open(output_dir / "odometry_config_used.json",
-              "w",
-              encoding="utf-8") as f:
+    with open(
+        output_dir / "odometry_config_used.json",
+        "w",
+        encoding="utf-8",
+    ) as f:
         json.dump(odom_cfg.to_serialisable_dict(), f, indent=2)
 
     if loop_cfg is not None:
-        with open(output_dir / "loop_closure_config_used.json",
-                  "w",
-                  encoding="utf-8") as f:
+        with open(
+            output_dir / "loop_closure_config_used.json",
+            "w",
+            encoding="utf-8",
+        ) as f:
             json.dump(loop_cfg.to_serialisable_dict(), f, indent=2)
