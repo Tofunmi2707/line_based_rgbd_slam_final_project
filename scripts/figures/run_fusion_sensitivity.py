@@ -18,7 +18,8 @@ from src.reconstruction import fuse_rgbd_from_poses  # noqa: E402
 
 def main() -> None:
     # Inspiration: dissertation fusion-sensitivity experiment; fr1_desk is used
-    # because it provides the clearest qualitative comparison across frame windows.
+    # because it provides the clearest qualitative comparison
+    # across frame windows.
     dataset_name = "fr1_desk"
     method_name = "v3_geom_filter"
     frame_settings = [10, 30, 60, 90, 120, 150, 180]

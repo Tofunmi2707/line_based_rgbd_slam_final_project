@@ -90,8 +90,14 @@ def draw_clean_chessboard_corners(
     for r in range(rows):
         for c in range(cols):
             x, y = np.round(pts[r, c]).astype(int)
-            cv2.circle(img, (x, y), circle_radius + 2, (0, 0, 0), -1, cv2.LINE_AA)
-            cv2.circle(img, (x, y), circle_radius, (255, 255, 255), -1, cv2.LINE_AA)
+            cv2.circle(img,
+                       (x, y),
+                       circle_radius + 2, (0, 0, 0),
+                       -1,
+                       cv2.LINE_AA)
+            cv2.circle(img,
+                       (x, y),
+                       circle_radius, (255, 255, 255), -1, cv2.LINE_AA)
 
     return img
 
@@ -275,7 +281,8 @@ def main() -> None:
         RuntimeError: If no valid checkerboard detections are obtained.
     """
     objp = np.zeros((CHECKERBOARD[0] * CHECKERBOARD[1], 3), np.float32)
-    objp[:, :2] = np.mgrid[0:CHECKERBOARD[0], 0:CHECKERBOARD[1]].T.reshape(-1, 2)
+    objp[:, :2] = np.mgrid[0:CHECKERBOARD[0],
+                           0:CHECKERBOARD[1]].T.reshape(-1, 2)
 
     objpoints = []
     imgpoints = []
@@ -311,11 +318,14 @@ def main() -> None:
             successful_images.append(fname)
             detector_names_used.add(method_name)
 
-            bold_img = draw_clean_chessboard_corners(img, corners, CHECKERBOARD)
+            bold_img = draw_clean_chessboard_corners(img,
+                                                     corners,
+                                                     CHECKERBOARD)
             base = Path(fname).stem
             cv2.imwrite(str(OUTPUT_DIR / f"{base}_corners_bold.jpg"), bold_img)
 
-            print(f"Detected corners in {Path(fname).name} using {method_name}")
+            print(f"Detected corners in {Path(fname).name} "
+                  f"using {method_name}")
 
             if SHOW_WINDOWS:
                 cv2.imshow("Detected corners", bold_img)
@@ -351,7 +361,9 @@ def main() -> None:
             mtx,
             dist,
         )
-        error = cv2.norm(imgpoints[i], projected_points, cv2.NORM_L2) / len(projected_points)
+        error = cv2.norm(imgpoints[i],
+                         projected_points,
+                         cv2.NORM_L2) / len(projected_points)
         per_image_errors.append(float(error))
 
     mean_error = float(np.mean(per_image_errors))
@@ -359,7 +371,11 @@ def main() -> None:
 
     sample_img = cv2.imread(successful_images[0])
     h, w = sample_img.shape[:2]
-    newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
+    newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx,
+                                                      dist,
+                                                      (w, h),
+                                                      1,
+                                                      (w, h))
     undistorted = cv2.undistort(sample_img, mtx, dist, None, newcameramtx)
 
     x, y, w_roi, h_roi = roi
@@ -369,8 +385,10 @@ def main() -> None:
         undistorted_cropped = undistorted.copy()
 
     cv2.imwrite(str(OUTPUT_DIR / "original_sample.jpg"), sample_img)
-    cv2.imwrite(str(OUTPUT_DIR / "undistorted_sample_full.jpg"), undistorted)
-    cv2.imwrite(str(OUTPUT_DIR / "undistorted_sample_cropped.jpg"), undistorted_cropped)
+    cv2.imwrite(str(OUTPUT_DIR / "undistorted_sample_full.jpg"),
+                undistorted)
+    cv2.imwrite(str(OUTPUT_DIR / "undistorted_sample_cropped.jpg"),
+                undistorted_cropped)
 
     save_undistortion_figure(
         sample_img,

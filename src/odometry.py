@@ -47,7 +47,8 @@ def run_visual_odometry(dataset_cfg, odom_cfg):
 
     For each consecutive RGB frame pair, the function:
     1. loads the corresponding RGB and nearest depth frames,
-    2. computes tentative and filtered correspondences using the selected front end,
+    2. computes tentative and filtered correspondences using the
+       selected front end,
     3. attempts calibrated relative pose estimation,
     4. rejects unreliable updates using the configured acceptance rules,
     5. accumulates accepted poses into a world-frame trajectory,
@@ -64,8 +65,10 @@ def run_visual_odometry(dataset_cfg, odom_cfg):
       inliers and insufficient metric depth support.
 
     Args:
-        dataset_cfg: Dataset configuration object containing paths and intrinsics.
-        odom_cfg: Odometry configuration object containing thresholds and output settings.
+        dataset_cfg: Dataset configuration object containing paths and
+        intrinsics.
+        odom_cfg: Odometry configuration object containing thresholds and
+        output settings.
 
     Returns:
         Dictionary containing:

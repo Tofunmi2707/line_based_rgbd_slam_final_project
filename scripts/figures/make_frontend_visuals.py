@@ -4,7 +4,8 @@ from __future__ import annotations
 Generate front-end visualisation figures for the dissertation.
 
 This script runs the selected front-end variant on a representative frame pair
-and saves the main visual outputs used in the report. It is intended to produce:
+and saves the main visual outputs used in the report.
+It is intended to produce:
 - CLAHE before/after comparison,
 - LSD line overlay,
 - raw line-match visualisation,
@@ -15,7 +16,8 @@ Inspiration:
 - The script is built around the project’s implemented V3 geometric-filter line
   front end.
 - The separation of raw, filtered, and rejected matches was added within the
-  present project so that the effect of the filtering stage can be shown clearly
+  present project so that the effect of the filtering
+  stage can be shown clearly
   in the dissertation.
 """
 
@@ -29,7 +31,9 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from config import DATASETS, OdometryConfig  # noqa: E402
 from src.tum_io import load_rgb_sequence  # noqa: E402
-from src.line_frontend_v3_geom_filter import save_frontend_visuals  # noqa: E402
+from src.line_frontend_v3_geom_filter import (  # noqa: E402
+     save_frontend_visuals
+)
 from src.line_frontend_v3_geom_filter import subtract_matches  # noqa: E402
 from src.line_frontend_v3_geom_filter import draw_line_matches  # noqa: E402
 

@@ -38,8 +38,10 @@ def fuse_rgbd_from_poses(
     The function:
     1. loads RGB frames and their nearest associated depth frames,
     2. constructs Open3D RGB-D images,
-    3. back-projects each frame into a point cloud using the dataset intrinsics,
-    4. transforms each cloud into the shared world frame using the estimated poses,
+    3. back-projects each frame into a point cloud using the dataset
+       intrinsics,
+    4. transforms each cloud into the shared world frame using the
+       estimated poses,
     5. accumulates the transformed clouds,
     6. applies voxel downsampling and statistical outlier removal,
     7. saves the fused point cloud to disk.
@@ -52,9 +54,11 @@ def fuse_rgbd_from_poses(
       to study how pose quality affects reconstruction coherence.
 
     Args:
-        dataset_cfg: Dataset configuration object containing intrinsics and paths.
+        dataset_cfg: Dataset configuration object containing intrinsics
+        and paths.
         image_files: Sequence of RGB image paths used in the trajectory.
-        poses_wc: Estimated world-frame camera poses aligned with the RGB frames.
+        poses_wc: Estimated world-frame camera poses aligned with the
+        RGB frames.
         output_dir: Directory in which the fused point cloud should be saved.
         max_frames: Maximum number of frames to consider for fusion.
         step: Step size used when subsampling frames.

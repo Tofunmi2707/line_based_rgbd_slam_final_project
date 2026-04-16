@@ -10,7 +10,8 @@ that the final outputs can be regenerated consistently from the project root.
 
 Inspiration:
 - Standard Python subprocess-based batch execution.
-- The script ordering and output grouping were chosen within the present project
+- The script ordering and output grouping were chosen within
+  the present project
   to follow the structure of the dissertation results chapter.
 """
 
@@ -51,7 +52,8 @@ def main() -> None:
     Execute all main report-output scripts in a fixed order.
 
     The execution order follows the dissertation workflow:
-    calibration, front-end visualisation, odometry analysis, trajectory and loop
+    calibration, front-end visualisation, odometry analysis,
+    trajectory and loop
     closure outputs, reconstruction, and final GIF generation.
 
     Returns:
@@ -69,7 +71,7 @@ def main() -> None:
         PROJECT_ROOT / "scripts" / "analysis" / "summarise_loop_closure.py",
         PROJECT_ROOT / "scripts" / "figures" / "make_single_frame_cloud.py",
         PROJECT_ROOT / "scripts" / "figures" / "run_fusion_sensitivity.py",
-        PROJECT_ROOT / "scripts" / "figures" / "make_reconstruction_figures.py",
+        PROJECT_ROOT / "scripts" / "figures" / "make_reconstruction_figures.py",  # noqa: E501
         PROJECT_ROOT / "scripts" / "figures" / "make_cloud_gif.py",
     ]
 

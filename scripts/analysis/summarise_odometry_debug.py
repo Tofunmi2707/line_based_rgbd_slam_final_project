@@ -40,7 +40,8 @@ def find_latest_debug_csv(run_dir: Path) -> Path | None:
     Find the most recent odometry debug CSV in a run directory.
 
     Args:
-        run_dir: Directory containing odometry outputs for one dataset/method run.
+        run_dir: Directory containing odometry outputs for one
+        dataset/method run.
 
     Returns:
         Path to the latest matching debug CSV, or None if no debug CSV exists.
@@ -176,7 +177,8 @@ def find_rmse(run_dir: Path) -> float | None:
 
 def collect_runs(results_dir: Path) -> list[dict]:
     """
-    Collect odometry summaries for all dataset/method runs under the results directory.
+    Collect odometry summaries for all dataset/method runs under
+    the results directory.
 
     The script assumes the directory convention:
     results/<dataset>/<method>/...

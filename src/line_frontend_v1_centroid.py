@@ -3,8 +3,8 @@ from __future__ import annotations
 """
 Centroid-based line front end for the baseline RGB-D SLAM pipeline.
 
-This module implements the initial front-end variant used as the baseline in the
-project. It performs:
+This module implements the initial front-end variant used as
+the baseline in the project. It performs:
 - grayscale image loading,
 - CLAHE preprocessing,
 - LSD line detection,
@@ -18,9 +18,9 @@ Inspiration:
 - The use of line centroids, segment length, and orientation as matching cues
   was a project-specific simplified baseline designed for debugging and
   comparison.
-- The histogram-based filtering stage was implemented within the present project
-  to retain matches consistent with the dominant displacement and angle trend of
-  a frame pair.
+- The histogram-based filtering stage was implemented within the present
+project to retain matches consistent with the dominant
+displacement and angle trend of a frame pair.
 
 Notes:
 - This is a deliberately simplified baseline.
@@ -121,7 +121,9 @@ def keep_top_k_by_length(lines: np.ndarray, k: int) -> np.ndarray:
     return lines[idx].reshape(-1, 1, 4)
 
 
-def compute_features(lines: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def compute_features(lines: np.ndarray) -> tuple[np.ndarray,
+                                                 np.ndarray,
+                                                 np.ndarray]:
     """
     Compute centroid, length, and orientation for each line segment.
 
@@ -304,14 +306,16 @@ def histogram_filter(
     then retains matches that lie near the dominant histogram bins.
 
     Inspiration:
-    - This is a project-specific filtering stage designed to reject matches that
-      are inconsistent with the dominant displacement and angular trend.
+    - This is a project-specific filtering stage designed
+      to reject matches that are inconsistent with the
+      dominant displacement and angular trend.
 
     Args:
         matches: Tentative centroid matches.
         hist_bins: Number of histogram bins.
         length_band_width: Accepted band around the dominant connection length.
-        angle_band_width_deg: Accepted band around the dominant connection angle.
+        angle_band_width_deg: Accepted band around the dominant
+        connection angle.
 
     Returns:
         Tuple containing:
@@ -336,8 +340,12 @@ def histogram_filter(
     L_hist, L_bins = np.histogram(conn_lengths, bins=hist_bins)
     A_hist, A_bins = np.histogram(conn_angles, bins=hist_bins)
 
-    dominant_L = (L_bins[np.argmax(L_hist)] + L_bins[np.argmax(L_hist) + 1]) / 2.0
-    dominant_A = (A_bins[np.argmax(A_hist)] + A_bins[np.argmax(A_hist) + 1]) / 2.0
+    dominant_L = (
+        L_bins[np.argmax(L_hist)] + L_bins[np.argmax(L_hist) + 1]
+        ) / 2.0
+    dominant_A = (
+        A_bins[np.argmax(A_hist)] + A_bins[np.argmax(A_hist) + 1]
+        ) / 2.0
 
     mask = (
         (np.abs(conn_lengths - dominant_L) < length_band_width)

@@ -5,7 +5,8 @@ Generate CLAHE comparison figures and line-count summaries for the report.
 
 This script compares grayscale images before and after CLAHE preprocessing and
 measures how many LSD line segments are detected in each case. It is used to
-support the front-end preprocessing subsection of the dissertation by producing:
+support the front-end preprocessing subsection of the dissertation
+by producing:
 - side-by-side grayscale vs CLAHE figures,
 - line-count comparison CSV files,
 - grouped bar charts of line counts,
@@ -189,7 +190,7 @@ def main() -> None:
     dataset_cfg = DATASETS[dataset_name]
     rgb_files = load_rgb_sequence(dataset_cfg.rgb_dir)
 
-    out_dir = PROJECT_ROOT / "results" / dataset_name / "clahe_line_count_comparison"
+    out_dir = PROJECT_ROOT / "results" / dataset_name / "clahe_line_count_comparison"  # noqa: E501
     out_dir.mkdir(parents=True, exist_ok=True)
 
     rows: list[list[int]] = []

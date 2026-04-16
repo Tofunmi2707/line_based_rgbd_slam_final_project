@@ -274,9 +274,12 @@ def load_metrics_file(npz_path: Path) -> dict:
     return out
 
 
-def find_latest_loop_metrics(results_dir: Path) -> tuple[Path, str, str] | None:
+def find_latest_loop_metrics(results_dir: Path) -> tuple[Path,
+                                                         str,
+                                                         str] | None:
     """
-    Find the most relevant saved loop-closure metrics file under the results directory.
+    Find the most relevant saved loop-closure metrics file under the results
+    directory.
 
     The expected project layout is:
     results/<dataset>/<method>/loop_closure/...
@@ -309,11 +312,15 @@ def find_latest_loop_metrics(results_dir: Path) -> tuple[Path, str, str] | None:
 
             direct_npz = method_dir / "loop_closure_metrics.npz"
             if direct_npz.exists():
-                candidates.append((direct_npz, dataset_dir.name, method_dir.name))
+                candidates.append((direct_npz,
+                                  dataset_dir.name,
+                                  method_dir.name))
 
-            nested_npz = method_dir / "loop_closure" / "loop_closure_metrics.npz"
+            nested_npz = method_dir / "loop_closure" / "loop_closure_metrics.npz"  # noqa: E501
             if nested_npz.exists():
-                candidates.append((nested_npz, dataset_dir.name, method_dir.name))
+                candidates.append((nested_npz,
+                                  dataset_dir.name,
+                                  method_dir.name))
 
     if not candidates:
         return None
@@ -349,7 +356,9 @@ def main() -> None:
     npz_path, dataset_name, method_name = found
     metrics = load_metrics_file(npz_path)
 
-    run_dir = npz_path.parent if npz_path.parent.name != method_name else npz_path.parent
+    run_dir = npz_path.parent
+    if npz_path.parent.name != method_name:
+        run_dir = npz_path.parent
     out_dir = run_dir / "loop_closure_summary"
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -392,10 +401,13 @@ def main() -> None:
     print(f"Method : {method_name}")
     print(f"Number of odometry edges: {metrics['num_odom_edges']}")
     print(f"Number of loop edges: {metrics['num_loop_edges']}")
-    print(f"Loop mean residual before: {safe_mean(metrics['loop_before']):.6f}")
+    print("Loop mean residual before:"
+          f" {safe_mean(metrics['loop_before']):.6f}")
     print(f"Loop mean residual after : {safe_mean(metrics['loop_after']):.6f}")
-    print(f"Loop median residual before: {safe_median(metrics['loop_before']):.6f}")
-    print(f"Loop median residual after : {safe_median(metrics['loop_after']):.6f}")
+    print(f"Loop median residual before: "
+          f"{safe_median(metrics['loop_before']):.6f}")
+    print(f"Loop median residual after : "
+          f"{safe_median(metrics['loop_after']):.6f}")
 
 
 if __name__ == "__main__":

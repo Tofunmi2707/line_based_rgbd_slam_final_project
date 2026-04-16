@@ -51,7 +51,8 @@ def make_rotating_gif(
     Args:
         ply_path: Path to the input point-cloud file.
         gif_path: Path to the output GIF file.
-        frame_dir: Directory in which the intermediate rendered frames are saved.
+        frame_dir: Directory in which the
+                   intermediate rendered frames are saved.
         width: Render width in pixels.
         height: Render height in pixels.
         num_frames: Number of frames in the orbit sequence.
@@ -118,9 +119,9 @@ def main() -> None:
     dataset_name = "fr1_desk"
     method_name = "v3_geom_filter"
 
-    ply_path = PROJECT_ROOT / "results" / dataset_name / method_name / "fused_cloud_3d.ply"
-    gif_path = PROJECT_ROOT / "results" / "gifs" / f"{dataset_name}_{method_name}_rotation.gif"
-    frame_dir = PROJECT_ROOT / "results" / "gifs" / f"{dataset_name}_{method_name}_frames"
+    ply_path = PROJECT_ROOT / "results" / dataset_name / method_name / "fused_cloud_3d.ply"  # noqa: E501
+    gif_path = PROJECT_ROOT / "results" / "gifs" / f"{dataset_name}_{method_name}_rotation.gif"  # noqa: E501
+    frame_dir = PROJECT_ROOT / "results" / "gifs" / f"{dataset_name}_{method_name}_frames"  # noqa: E501
 
     make_rotating_gif(ply_path, gif_path, frame_dir)
     print(f"Saved GIF to: {gif_path}")

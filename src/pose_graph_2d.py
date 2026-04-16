@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 """
-Lightweight 2D pose-graph optimisation utilities for the loop-closure experiment.
+Lightweight 2D pose-graph optimisation utilities for the
+loop-closure experiment.
 
 This module implements a simple planar pose-graph backend used to evaluate the
 effect of loop constraints on odometry consistency. Poses are represented in a
@@ -178,7 +179,8 @@ def compute_edge_residuals(poses: np.ndarray, edges: list[dict]) -> dict:
         edges: List of edge dictionaries with keys including i, j, z, and type.
 
     Returns:
-        Dictionary containing odometry residuals, loop residuals, and edge counts.
+        Dictionary containing odometry residuals, loop residuals,
+        and edge counts.
     """
     odom_residuals = []
     loop_residuals = []
@@ -290,8 +292,9 @@ def optimise_pose_graph_with_metrics(
         w_loop: Weight applied to loop edges.
 
     Returns:
-        Dictionary containing poses before optimisation, poses after optimisation,
-        residual arrays before and after optimisation, and edge counts.
+        Dictionary containing poses before optimisation, poses
+        after optimisation, residual arrays before and after optimisation,
+        and edge counts.
     """
     poses_before = poses.copy()
 

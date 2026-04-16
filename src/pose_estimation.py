@@ -11,8 +11,8 @@ This module provides:
 - rigid-transform construction.
 
 Inspiration:
-- The calibrated two-view workflow follows the standard OpenCV pipeline based on
-  `findEssentialMat` and `recoverPose`.
+- The calibrated two-view workflow follows the standard OpenCV
+  pipeline based on `findEssentialMat` and `recoverPose`.
 - Pixel back-projection follows the standard pinhole RGB-D camera model used in
   visual odometry and RGB-D reconstruction.
 - The metric translation stage is a project-specific integration step that uses
@@ -64,9 +64,10 @@ def backproject_pixels_to_3d(
 
     Returns:
         Tuple containing:
-        - P: Array of 3D points with shape (N, 3), or None if no valid depth exists.
-        - valid: Boolean mask indicating which points have valid positive depth,
-          or None if back-projection fails.
+        - P: Array of 3D points with shape (N, 3),
+          or None if no valid depth exists.
+        - valid: Boolean mask indicating which points have valid
+          positive depth, or None if back-projection fails.
     """
     if depth_img is None:
         return None, None
@@ -151,15 +152,16 @@ def estimate_metric_translation(
     """
     Estimate metric translation using valid depth-backed correspondences.
 
-    The function back-projects the inlier image correspondences from both frames
-    into 3D, applies the recovered rotation to the first-frame points, and
-    estimates translation from the mean displacement between the rotated and
-    observed 3D points.
+    The function back-projects the inlier image correspondences
+    from both frames into 3D, applies the recovered rotation to
+    the first-frame points, and estimates translation from the
+    mean displacement between the rotated and observed 3D points.
 
     Inspiration:
     - Standard RGB-D back-projection is used here.
-    - The final translation computation is a project-specific integration choice
-      for linking calibrated two-view pose with available depth measurements.
+    - The final translation computation is a project-specific
+      integration choice for linking calibrated two-view pose with
+      available depth measurements.
 
     Args:
         A: Inlier image points from frame 1.
@@ -214,7 +216,8 @@ def process_frame_pair_pose(
     5. records detailed rejection reasons for later diagnosis.
 
     Inspiration:
-    - The calibrated two-view stage follows the standard OpenCV Essential-matrix
+    - The calibrated two-view stage follows the standard OpenCV
+      Essential-matrix
       workflow.
     - The structured debug dictionary and explicit rejection categories are
       project-specific additions used to support the odometry analysis chapter.
@@ -226,13 +229,15 @@ def process_frame_pair_pose(
         depth1_path: Path to depth image for frame 1.
         depth2_path: Path to depth image for frame 2.
         depth_scale: Depth scaling factor.
-        min_essential_inliers: Minimum number of Essential-matrix inliers required.
+        min_essential_inliers: Minimum number of Essential-matrix
+        inliers required.
         min_metric_points: Minimum number of valid 3D correspondences required.
 
     Returns:
         Tuple containing:
-        - pose: Dictionary with pose outputs if estimation succeeds sufficiently,
-          or None if the Essential-matrix stage fails outright.
+        - pose: Dictionary with pose outputs if estimation
+          succeeds sufficiently, or None if the Essential-matrix
+          stage fails outright.
         - debug: Dictionary containing intermediate counts, flags, norms, and
           rejection reasons.
     """
@@ -318,7 +323,8 @@ def process_frame_pair_pose(
 
 def make_T(R: np.ndarray, t: np.ndarray) -> np.ndarray:
     """
-    Construct a 4 x 4 homogeneous rigid-body transform from rotation and translation.
+    Construct a 4 x 4 homogeneous rigid-body transform from
+    rotation and translation.
 
     Args:
         R: 3 x 3 rotation matrix.

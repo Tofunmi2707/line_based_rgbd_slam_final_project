@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-# Inspiration: NumPy trajectory loading and matplotlib plotting; project-specific
+# Inspiration: NumPy trajectory loading and matplotlib plotting;
+# project-specific
 # before/after and benchmark-comparison figure generation implemented here.
 
 from pathlib import Path
@@ -25,7 +26,8 @@ def save_loop_closure_side_by_side(
     poses_after: np.ndarray,
     out_path: Path,
 ) -> None:
-    # Inspiration: before/after trajectory comparison for loop-closure reporting.
+    # Inspiration: before/after trajectory comparison for
+    # loop-closure reporting.
     all_xy = np.vstack([poses_before[:, :2], poses_after[:, :2]])
     xmin, xmax = all_xy[:, 0].min(), all_xy[:, 0].max()
     ymin, ymax = all_xy[:, 1].min(), all_xy[:, 1].max()
@@ -51,8 +53,16 @@ def save_loop_closure_side_by_side(
     axes[0].set_ylim(ymin, ymax)
 
     axes[1].plot(poses_after[:, 0], poses_after[:, 1], linewidth=2.2)
-    axes[1].scatter(poses_after[0, 0], poses_after[0, 1], s=70, marker="o", label="Start")
-    axes[1].scatter(poses_after[-1, 0], poses_after[-1, 1], s=70, marker="X", label="End")
+    axes[1].scatter(poses_after[0, 0],
+                    poses_after[0, 1],
+                    s=70,
+                    marker="o",
+                    label="Start")
+    axes[1].scatter(poses_after[-1, 0],
+                    poses_after[-1, 1],
+                    s=70,
+                    marker="X",
+                    label="End")
     axes[1].set_title("Trajectory after loop closure")
     axes[1].set_xlabel("x position (m)")
     axes[1].grid(True)
@@ -70,7 +80,8 @@ def save_correction_plot(
     poses_after: np.ndarray,
     out_path: Path,
 ) -> None:
-    # Inspiration: trajectory correction magnitude plot for backend interpretation.
+    # Inspiration: trajectory correction magnitude plot
+    # for backend interpretation.
     corr = np.linalg.norm(poses_after[:, :2] - poses_before[:, :2], axis=1)
 
     plt.figure(figsize=(8, 4))
@@ -85,13 +96,14 @@ def save_correction_plot(
 
 
 def main() -> None:
-    # Fastest use case: reuse already-generated loop-closure metrics if present.
+    # Fastest use case: reuse already-generated loop-closure
+    # metrics if present.
     dataset_name = "fr2_large_with_loop"
     method_name = "v2_lbd_endpoints"
 
     npz_candidates = [
-        PROJECT_ROOT / "results" / dataset_name / method_name / "loop_closure_metrics.npz",
-        PROJECT_ROOT / "results" / dataset_name / method_name / "loop_closure" / "loop_closure_metrics.npz",
+        PROJECT_ROOT / "results" / dataset_name / method_name / "loop_closure_metrics.npz",  # noqa: E501
+        PROJECT_ROOT / "results" / dataset_name / method_name / "loop_closure" / "loop_closure_metrics.npz",  # noqa: E501
     ]
 
     npz_path = None
@@ -102,7 +114,8 @@ def main() -> None:
 
     if npz_path is None:
         raise FileNotFoundError(
-            "Could not find loop_closure_metrics.npz in the expected results folders."
+            "Could not find loop_closure_metrics.npz in"
+            "the expected results folders."
         )
 
     data = np.load(npz_path, allow_pickle=True)

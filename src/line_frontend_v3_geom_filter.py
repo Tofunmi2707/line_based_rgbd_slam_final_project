@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 """
-Descriptor-based line front end with additional geometric consistency filtering.
+Descriptor-based line front end with additional geometric consistency
+filtering.
 
 This module implements the third front-end variant used in the project. It
 performs:
@@ -28,8 +29,8 @@ Inspiration:
   dominant local geometric pattern of the frame pair.
 
 Notes:
-- This variant extends the V2 descriptor-based endpoint front end by applying an
-  additional geometric filtering stage after descriptor matching.
+- This variant extends the V2 descriptor-based endpoint front end by applying
+  an additional geometric filtering stage after descriptor matching.
 - The final pose-estimation input is still formed from ordered line endpoints,
   not from full line-geometry constraints.
 """
@@ -152,7 +153,9 @@ def lines_to_keylines(lines: np.ndarray) -> list:
     return keylines
 
 
-def compute_lbd_descriptors(img: np.ndarray, lines: np.ndarray) -> tuple[list, np.ndarray | None]:
+def compute_lbd_descriptors(img: np.ndarray,
+                            lines: np.ndarray) -> tuple[list,
+                                                        np.ndarray | None]:
     """
     Compute binary line descriptors for detected line segments.
 
@@ -197,8 +200,8 @@ def angle_diff_deg(a: float, b: float) -> float:
 
 def endpoint_pair_from_match(kl1, kl2) -> tuple[np.ndarray, np.ndarray]:
     """
-    Build endpoint pairs for a matched line pair and enforce consistent endpoint
-    ordering.
+    Build endpoint pairs for a matched line pair and enforce
+    consistent endpoint ordering.
 
     Args:
         kl1: KeyLine from image 1.
@@ -311,7 +314,7 @@ def geometric_filter_matches(
 
     filtered = []
     for m, dx, dy in enriched:
-        if abs(dx - dx_med) <= dx_band_width and abs(dy - dy_med) <= dy_band_width:
+        if abs(dx - dx_med) <= dx_band_width and abs(dy - dy_med) <= dy_band_width:  # noqa: E501
             filtered.append(m)
 
     return filtered
@@ -336,7 +339,11 @@ def subtract_matches(raw_matches, filtered_matches) -> list:
     return rejected
 
 
-def build_endpoint_arrays(matches, keylines1, keylines2) -> tuple[np.ndarray, np.ndarray, list[tuple]]:
+def build_endpoint_arrays(matches,
+                          keylines1,
+                          keylines2) -> tuple[np.ndarray,
+                                              np.ndarray,
+                                              list[tuple]]:
     """
     Convert matched KeyLine pairs into endpoint point-correspondence arrays.
 
@@ -440,7 +447,8 @@ def draw_line_matches(
     canvas[:h2, w1:w1 + w2] = img2
 
     draw_matches = sorted(matches, key=lambda m: m.distance)
-    draw_matches = draw_matches if max_draw is None else draw_matches[:max_draw]
+    draw_matches = draw_matches if max_draw is None else draw_matches[
+        :max_draw]
 
     colours = [
         (255, 0, 0),
@@ -474,7 +482,8 @@ def save_frontend_visuals(
     output_dir: str | Path,
 ) -> dict | None:
     """
-    Save the main visual outputs for the geometry-filtered descriptor front end.
+    Save the main visual outputs for the
+    geometry-filtered descriptor front end.
 
     Saved outputs include:
     - CLAHE before/after comparison,

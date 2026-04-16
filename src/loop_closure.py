@@ -115,7 +115,8 @@ def find_loop_candidates(
         poses_xytheta: Planar poses with columns [x, z, theta].
         min_frame_gap: Minimum temporal separation between candidate frames.
         pose_radius: Maximum planar distance for loop-candidate selection.
-        max_candidates_per_frame: Maximum number of candidates retained per frame.
+        max_candidates_per_frame: Maximum number of candidates retained per
+        frame.
 
     Returns:
         List of candidate tuples (distance_2d, i, j).
@@ -147,10 +148,12 @@ def build_loop_edges(
     max_loop_step_metres: float = 1.0,
 ) -> tuple[list[dict], list[dict]]:
     """
-    Build accepted loop edges by re-estimating relative pose on candidate revisits.
+    Build accepted loop edges by re-estimating relative
+    pose on candidate revisits.
 
-    The same front-end and calibrated two-view pose-estimation logic used in the
-    main odometry stage is reused here for non-consecutive frame pairs.
+    The same front-end and calibrated two-view pose-estimation logic
+    used in the main odometry stage is reused here for
+    non-consecutive frame pairs.
 
     Args:
         dataset_cfg: Dataset configuration.
@@ -483,7 +486,8 @@ def save_loop_closure_trajectory_plot(
 
 def build_gt_xz(dataset_cfg, timestamps: np.ndarray) -> np.ndarray:
     """
-    Build an interpolated ground-truth x-z trajectory aligned to estimated timestamps.
+    Build an interpolated ground-truth x-z trajectory aligned
+    to estimated timestamps.
 
     Args:
         dataset_cfg: Dataset configuration containing the ground-truth path.
@@ -635,8 +639,8 @@ def main() -> None:
     """
     Run odometry followed by the loop-closure experiment on the loop sequence.
 
-    This entry point is useful for standalone backend testing and for generating
-    the saved loop-closure outputs used in the report.
+    This entry point is useful for standalone backend testing and
+    for generating the saved loop-closure outputs used in the report.
 
     Returns:
         None

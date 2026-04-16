@@ -14,7 +14,11 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from config import DATASETS  # noqa: E402
-from src.tum_io import load_rgb_sequence, build_depth_index, nearest_depth_path  # noqa: E402
+from src.tum_io import (  # noqa: E402
+    load_rgb_sequence,
+    build_depth_index,
+    nearest_depth_path
+)
 
 
 def make_single_frame_cloud(
@@ -46,7 +50,8 @@ def make_single_frame_cloud(
     )
 
     if depth_path is None:
-        raise RuntimeError(f"No matching depth frame found for {rgb_path.name}")
+        raise RuntimeError("No matching depth frame found"
+                           f" for {rgb_path.name}")
 
     color = o3d.io.read_image(str(rgb_path))
     depth = o3d.io.read_image(str(depth_path))
@@ -97,7 +102,8 @@ def make_single_frame_cloud(
     print(f"Point count      : {len(pcd.points)}")
 
     if visualise:
-        window_title = f"Single-frame cloud - {dataset_name} - frame {frame_idx}"
+        window_title = "Single-frame cloud - "
+        f"{dataset_name} - frame {frame_idx}"
         o3d.visualization.draw_geometries(
             [pcd],
             window_name=window_title,

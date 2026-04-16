@@ -21,7 +21,8 @@ Inspiration:
 - Line description and matching follow the OpenCV line_descriptor workflow,
   which implements binary descriptors over KeyLine objects and supports
   descriptor-based line matching.
-- The endpoint-correspondence construction, endpoint-order check, and the use of
+- The endpoint-correspondence construction,
+  endpoint-order check, and the use of
   matched endpoints as pose-estimation input were integrated within the present
   project as a more geometrically meaningful alternative to centroid-based
   correspondences.
@@ -29,8 +30,9 @@ Inspiration:
 Notes:
 - This variant keeps descriptor matching but does not yet apply the later
   geometric consistency filtering stage used in V3.
-- Matched line segments are converted into endpoint point correspondences for the
-  downstream Essential-matrix pose-estimation stage.
+- Matched line segments are converted into endpoint point
+  correspondences for the downstream Essential-matrix
+  pose-estimation stage.
 """
 
 from pathlib import Path
@@ -151,7 +153,9 @@ def lines_to_keylines(lines: np.ndarray) -> list:
     return keylines
 
 
-def compute_lbd_descriptors(img: np.ndarray, lines: np.ndarray) -> tuple[list, np.ndarray | None]:
+def compute_lbd_descriptors(img: np.ndarray,
+                            lines: np.ndarray) -> tuple[list,
+                                                        np.ndarray | None]:
     """
     Compute binary line descriptors for detected line segments.
 
@@ -181,8 +185,8 @@ def compute_lbd_descriptors(img: np.ndarray, lines: np.ndarray) -> tuple[list, n
 
 def endpoint_pair_from_match(kl1, kl2) -> tuple[np.ndarray, np.ndarray]:
     """
-    Build endpoint pairs for a matched line pair and enforce consistent endpoint
-    ordering.
+    Build endpoint pairs for a matched line pair and enforce consistent
+    endpoint ordering.
 
     The function compares same-order and swapped-order endpoint distances, then
     reorders the second line if needed so that corresponding endpoints are
@@ -226,12 +230,16 @@ def endpoint_pair_from_match(kl1, kl2) -> tuple[np.ndarray, np.ndarray]:
     return A, B
 
 
-def build_endpoint_arrays(matches, keylines1, keylines2) -> tuple[np.ndarray, np.ndarray, list[tuple]]:
+def build_endpoint_arrays(matches,
+                          keylines1,
+                          keylines2) -> tuple[np.ndarray,
+                                              np.ndarray,
+                                              list[tuple]]:
     """
     Convert matched KeyLine pairs into endpoint point-correspondence arrays.
 
-    Each accepted line match contributes two point correspondences, one for each
-    ordered endpoint.
+    Each accepted line match contributes two point correspondences,
+    one for each ordered endpoint.
 
     Args:
         matches: Descriptor matches.
@@ -331,7 +339,7 @@ def draw_line_matches(
     canvas[:h2, w1:w1 + w2] = img2
 
     draw_matches = sorted(matches, key=lambda m: m.distance)
-    draw_matches = draw_matches if max_draw is None else draw_matches[:max_draw]
+    draw_matches = draw_matches if max_draw is None else draw_matches[:max_draw]  # noqa: E501
 
     colours = [
         (255, 0, 0),

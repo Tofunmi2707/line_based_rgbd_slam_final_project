@@ -33,9 +33,11 @@ class DatasetConfig:
         depth_dir: Directory containing depth frames.
         groundtruth_path: Path to benchmark ground-truth trajectory.
         assoc_path: Optional RGB-depth association file.
-        intrinsics: Camera intrinsic matrix used for projection/back-projection.
+        intrinsics: Camera intrinsic matrix used for projection
+        /back-projection.
         depth_scale: Depth scaling factor used by the dataset.
-        max_rgb_depth_dt: Maximum timestamp difference allowed for RGB–depth pairing.
+        max_rgb_depth_dt: Maximum timestamp difference allowed for
+        RGB-depth pairing.
         freiburg_group: Freiburg sensor group label.
         depth_correction_factor: Dataset-specific depth correction factor.
     """
@@ -107,8 +109,9 @@ class LoopClosureConfig:
     """
     Store backend loop-closure and pose-graph optimisation settings.
 
-    These settings are kept separate from the odometry configuration so that the
-    loop-closure experiment can be reported as a distinct backend stage.
+    These settings are kept separate from the odometry configuration so
+    that the loop-closure experiment can be reported as a distinct backend
+    stage.
     """
     min_frame_gap: int = 80
     pose_radius: float = 0.40
@@ -254,7 +257,8 @@ def save_run_configs(
         output_dir: Directory in which the configuration files should be saved.
         dataset_cfg: Dataset configuration used for the run.
         odom_cfg: Odometry configuration used for the run.
-        loop_cfg: Optional loop-closure configuration used for backend evaluation.
+        loop_cfg: Optional loop-closure configuration used for backend
+        evaluation.
 
     Returns:
         None

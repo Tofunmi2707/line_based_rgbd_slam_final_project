@@ -55,7 +55,8 @@ def load_rgb_frame(dataset_name: str, frame_idx: int) -> np.ndarray:
 
     img = cv2.imread(str(rgb_files[frame_idx]))
     if img is None:
-        raise FileNotFoundError(f"Could not load RGB frame: {rgb_files[frame_idx]}")
+        raise FileNotFoundError(f"Could not load RGB frame: "
+                                f"{rgb_files[frame_idx]}")
     return img
 
 

@@ -42,7 +42,7 @@ def main() -> None:
         None
     """
     dataset_name = "fr2_large_with_loop"     # change as needed
-    method_name = "v3_geom_filter"           # change as needed
+    method_name = "v1_centroid"           # change as needed
 
     dataset_cfg = DATASETS[dataset_name]
 

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 """
-Utilities for loading TUM RGB-D image sequences and ground-truth trajectory data.
+Utilities for loading TUM RGB-D image sequences and ground-truth
+trajectory data.
 
 This module provides helper functions for:
 - extracting timestamps from TUM-style filenames,
@@ -70,7 +71,8 @@ def build_depth_index(depth_dir: Path) -> tuple[np.ndarray, list[Path]]:
         - depth_files: Sorted list of depth image paths.
     """
     depth_files = list_image_files(depth_dir, "*.png")
-    depth_ts = np.array([timestamp_from_path(p) for p in depth_files], dtype=float)
+    depth_ts = np.array([timestamp_from_path(p) for p in depth_files],
+                        dtype=float)
     return depth_ts, depth_files
 
 
@@ -141,7 +143,8 @@ def associate_gt_positions(
         gt_xyz: Ground-truth XYZ positions.
 
     Returns:
-        Array of interpolated XYZ positions aligned to the estimated timestamps.
+        Array of interpolated XYZ positions aligned to the
+        estimated timestamps.
     """
     x = np.interp(est_timestamps, gt_timestamps, gt_xyz[:, 0])
     y = np.interp(est_timestamps, gt_timestamps, gt_xyz[:, 1])
