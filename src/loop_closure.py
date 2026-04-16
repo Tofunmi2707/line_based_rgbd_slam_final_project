@@ -1,9 +1,29 @@
+from __future__ import annotations
+
+"""
+Loop-closure utilities for the line-based RGB-D SLAM pipeline.
+
+This module identifies loop candidates from the estimated odometry trajectory,
+re-estimates relative pose between non-consecutive frame pairs, constructs loop
+edges for a 2D pose graph, runs pose-graph optimisation, and saves the main
+diagnostic outputs used in the dissertation.
+
+Inspiration:
+- Loop-candidate search follows a standard SLAM idea: revisit constraints are
+  proposed from poses that are spatially close but temporally well separated.
+- Relative loop-edge estimation reuses the same calibrated two-view pose stage
+  used in the main odometry pipeline.
+- Pose-graph optimisation follows standard graph-based SLAM practice, while the
+  residual reporting, plotting, and experiment structure were integrated within
+  the present project for backend evaluation.
+"""
+
 from pathlib import Path
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
 
-from config import DATASETS, PipelineConfig
+from config import DATASETS, OdometryConfig, LoopClosureConfig
 from src.odometry import run_visual_odometry
 from src.tum_io import (
     build_depth_index,
@@ -17,10 +37,28 @@ from src.pose_graph_2d import optimise_pose_graph_with_metrics
 
 
 def yaw_from_R(R: np.ndarray) -> float:
+    """
+    Extract planar yaw from a 3 x 3 rotation matrix.
+
+    Args:
+        R: Rotation matrix.
+
+    Returns:
+        Yaw angle in radians.
+    """
     return float(np.arctan2(R[0, 2], R[2, 2]))
 
 
 def poses_wc_to_xytheta(poses_wc: np.ndarray) -> np.ndarray:
+    """
+    Convert 4 x 4 world-frame poses to planar x-z-yaw states.
+
+    Args:
+        poses_wc: Array of homogeneous world-frame poses.
+
+    Returns:
+        Array of planar poses with columns [x, z, theta].
+    """
     poses_2d = []
     for T in poses_wc:
         x = float(T[0, 3])
@@ -31,10 +69,28 @@ def poses_wc_to_xytheta(poses_wc: np.ndarray) -> np.ndarray:
 
 
 def safe_mean(x: np.ndarray) -> float:
+    """
+    Compute a mean safely for possibly empty arrays.
+
+    Args:
+        x: Input array.
+
+    Returns:
+        Mean value, or NaN if the array is empty.
+    """
     return float(np.mean(x)) if len(x) > 0 else float("nan")
 
 
 def safe_median(x: np.ndarray) -> float:
+    """
+    Compute a median safely for possibly empty arrays.
+
+    Args:
+        x: Input array.
+
+    Returns:
+        Median value, or NaN if the array is empty.
+    """
     return float(np.median(x)) if len(x) > 0 else float("nan")
 
 
@@ -43,9 +99,28 @@ def find_loop_candidates(
     min_frame_gap: int,
     pose_radius: float,
     max_candidates_per_frame: int = 1,
-):
-    candidates = []
+) -> list[tuple[float, int, int]]:
+    """
+    Find loop candidates from planar pose proximity.
 
+    A frame pair is considered a candidate when:
+    - the temporal separation exceeds a minimum frame gap, and
+    - the planar position distance is below the specified radius.
+
+    Inspiration:
+    - This follows the standard loop-closure intuition that revisits should be
+      spatially close but temporally separated.
+
+    Args:
+        poses_xytheta: Planar poses with columns [x, z, theta].
+        min_frame_gap: Minimum temporal separation between candidate frames.
+        pose_radius: Maximum planar distance for loop-candidate selection.
+        max_candidates_per_frame: Maximum number of candidates retained per frame.
+
+    Returns:
+        List of candidate tuples (distance_2d, i, j).
+    """
+    candidates = []
     xy = poses_xytheta[:, :2]
 
     for j in range(len(poses_xytheta)):
@@ -63,14 +138,35 @@ def find_loop_candidates(
 
 def build_loop_edges(
     dataset_cfg,
-    pipe_cfg,
+    odom_cfg: OdometryConfig,
     image_files,
-    poses_wc,
+    poses_wc: np.ndarray,
     min_frame_gap: int = 80,
     pose_radius: float = 0.40,
     max_candidates_per_frame: int = 1,
     max_loop_step_metres: float = 1.0,
-):
+) -> tuple[list[dict], list[dict]]:
+    """
+    Build accepted loop edges by re-estimating relative pose on candidate revisits.
+
+    The same front-end and calibrated two-view pose-estimation logic used in the
+    main odometry stage is reused here for non-consecutive frame pairs.
+
+    Args:
+        dataset_cfg: Dataset configuration.
+        odom_cfg: Odometry configuration used for matching and pose thresholds.
+        image_files: RGB frame paths aligned with poses_wc.
+        poses_wc: Estimated world-frame poses.
+        min_frame_gap: Minimum temporal separation for loop candidates.
+        pose_radius: Maximum planar distance for loop candidates.
+        max_candidates_per_frame: Maximum candidates evaluated per frame.
+        max_loop_step_metres: Maximum accepted loop translation magnitude.
+
+    Returns:
+        Tuple containing:
+        - accepted loop-edge dictionaries,
+        - debug rows for all evaluated candidates.
+    """
     poses_xytheta = poses_wc_to_xytheta(poses_wc)
     candidates = find_loop_candidates(
         poses_xytheta,
@@ -108,7 +204,7 @@ def build_loop_edges(
             "reject_reason": None,
         }
 
-        front = process_frame_pair_frontend(str(f1), str(f2), pipe_cfg)
+        front = process_frame_pair_frontend(str(f1), str(f2), odom_cfg)
         if front is None:
             row["reject_reason"] = "frontend_failed"
             loop_debug_rows.append(row)
@@ -124,8 +220,8 @@ def build_loop_edges(
             str(d1) if d1 is not None else None,
             str(d2) if d2 is not None else None,
             dataset_cfg.depth_scale,
-            pipe_cfg.min_essential_inliers,
-            pipe_cfg.min_metric_points,
+            odom_cfg.min_essential_inliers,
+            odom_cfg.min_metric_points,
         )
 
         row["essential_inliers"] = pose_debug["num_essential_inliers"]
@@ -167,7 +263,17 @@ def build_loop_edges(
     return loop_edges, loop_debug_rows
 
 
-def save_loop_debug_csv(out_path: Path, rows: list[dict]):
+def save_loop_debug_csv(out_path: Path, rows: list[dict]) -> None:
+    """
+    Save per-candidate loop-debug information to CSV.
+
+    Args:
+        out_path: Output CSV path.
+        rows: Candidate debug rows.
+
+    Returns:
+        None
+    """
     with open(out_path, "w", encoding="utf-8", newline="") as f:
         writer = csv.writer(f)
         writer.writerow([
@@ -196,7 +302,20 @@ def save_loop_closure_residual_table(
     odom_after: np.ndarray,
     loop_before: np.ndarray,
     loop_after: np.ndarray,
-):
+) -> None:
+    """
+    Save before/after residual statistics for odometry and loop edges.
+
+    Args:
+        out_csv: Output CSV path.
+        odom_before: Odometry residuals before optimisation.
+        odom_after: Odometry residuals after optimisation.
+        loop_before: Loop residuals before optimisation.
+        loop_after: Loop residuals after optimisation.
+
+    Returns:
+        None
+    """
     rows = [
         [
             "odometry",
@@ -237,7 +356,22 @@ def save_loop_closure_summary_txt(
     odom_after: np.ndarray,
     loop_before: np.ndarray,
     loop_after: np.ndarray,
-):
+) -> None:
+    """
+    Save a plain-text loop-closure summary for auditability and appendix use.
+
+    Args:
+        out_txt: Output text-file path.
+        num_odom_edges: Number of odometry edges in the graph.
+        num_loop_edges: Number of loop edges in the graph.
+        odom_before: Odometry residuals before optimisation.
+        odom_after: Odometry residuals after optimisation.
+        loop_before: Loop residuals before optimisation.
+        loop_after: Loop residuals after optimisation.
+
+    Returns:
+        None
+    """
     with open(out_txt, "w", encoding="utf-8") as f:
         f.write("Loop closure summary\n")
         f.write("--------------------\n")
@@ -263,7 +397,20 @@ def save_loop_closure_residual_plot(
     odom_after: np.ndarray,
     loop_before: np.ndarray,
     loop_after: np.ndarray,
-):
+) -> None:
+    """
+    Save a bar plot of mean residuals before and after loop closure.
+
+    Args:
+        out_png: Output image path.
+        odom_before: Odometry residuals before optimisation.
+        odom_after: Odometry residuals after optimisation.
+        loop_before: Loop residuals before optimisation.
+        loop_after: Loop residuals after optimisation.
+
+    Returns:
+        None
+    """
     labels = [
         "Odom mean\nbefore",
         "Odom mean\nafter",
@@ -292,7 +439,19 @@ def save_loop_closure_trajectory_plot(
     poses_before_xy: np.ndarray,
     poses_after_xy: np.ndarray,
     gt_xy: np.ndarray | None = None,
-):
+) -> None:
+    """
+    Save a planar trajectory comparison before and after loop closure.
+
+    Args:
+        out_png: Output image path.
+        poses_before_xy: Planar poses before optimisation.
+        poses_after_xy: Planar poses after optimisation.
+        gt_xy: Optional interpolated ground-truth planar trajectory.
+
+    Returns:
+        None
+    """
     plt.figure(figsize=(7, 6))
 
     if gt_xy is not None and len(gt_xy) > 0:
@@ -323,6 +482,16 @@ def save_loop_closure_trajectory_plot(
 
 
 def build_gt_xz(dataset_cfg, timestamps: np.ndarray) -> np.ndarray:
+    """
+    Build an interpolated ground-truth x-z trajectory aligned to estimated timestamps.
+
+    Args:
+        dataset_cfg: Dataset configuration containing the ground-truth path.
+        timestamps: Estimated trajectory timestamps.
+
+    Returns:
+        Interpolated ground-truth planar trajectory with columns [x, z].
+    """
     gt_t, gt_xyz = load_groundtruth(dataset_cfg.groundtruth_path)
     gt_interp = associate_gt_positions(timestamps, gt_t, gt_xyz)
     gt_interp = gt_interp - gt_interp[0]
@@ -331,19 +500,41 @@ def build_gt_xz(dataset_cfg, timestamps: np.ndarray) -> np.ndarray:
 
 def run_loop_closure_stage(
     dataset_cfg,
-    odom_cfg,
-    loop_cfg,
+    odom_cfg: OdometryConfig,
+    loop_cfg: LoopClosureConfig,
     poses_wc: np.ndarray,
     timestamps: np.ndarray,
     image_files,
     odometry_edges: list[dict],
     output_dir: Path,
-):
+) -> dict:
+    """
+    Run the full loop-closure stage and save its outputs.
+
+    The function:
+    1. finds and validates loop candidates,
+    2. combines odometry and loop edges into one pose graph,
+    3. optimises the graph,
+    4. saves residual tables, plots, debug CSVs, and metrics files.
+
+    Args:
+        dataset_cfg: Dataset configuration.
+        odom_cfg: Odometry configuration used for loop-edge re-estimation.
+        loop_cfg: Loop-closure configuration.
+        poses_wc: World-frame odometry poses.
+        timestamps: Frame timestamps aligned with poses_wc.
+        image_files: RGB image paths aligned with poses_wc.
+        odometry_edges: Existing odometry edges from the main pipeline.
+        output_dir: Output directory for loop-closure artefacts.
+
+    Returns:
+        Dictionary summarising the optimisation outputs and key metrics.
+    """
     output_dir.mkdir(parents=True, exist_ok=True)
 
     loop_edges, loop_debug_rows = build_loop_edges(
         dataset_cfg=dataset_cfg,
-        pipe_cfg=odom_cfg,
+        odom_cfg=odom_cfg,
         image_files=image_files,
         poses_wc=poses_wc,
         min_frame_gap=loop_cfg.min_frame_gap,
@@ -440,39 +631,45 @@ def run_loop_closure_stage(
     }
 
 
-def main():
+def main() -> None:
+    """
+    Run odometry followed by the loop-closure experiment on the loop sequence.
+
+    This entry point is useful for standalone backend testing and for generating
+    the saved loop-closure outputs used in the report.
+
+    Returns:
+        None
+    """
     dataset_name = "fr2_large_with_loop"
     method_name = "v2_lbd_endpoints"
 
     dataset_cfg = DATASETS[dataset_name]
 
-    pipe_cfg = PipelineConfig()
-    pipe_cfg.output_dir = Path("results") / dataset_name / method_name
+    odom_cfg = OdometryConfig(
+        method_name=method_name,
+        output_dir=Path("results") / dataset_name / method_name,
+    )
+    loop_cfg = LoopClosureConfig()
 
     print(f"Running visual odometry for {dataset_name}...")
-    odo_out = run_visual_odometry(dataset_cfg, pipe_cfg)
+    odo_out = run_visual_odometry(dataset_cfg, odom_cfg)
 
     print("\nRunning loop closure...")
     lc_out = run_loop_closure_stage(
         dataset_cfg=dataset_cfg,
-        pipe_cfg=pipe_cfg,
+        odom_cfg=odom_cfg,
+        loop_cfg=loop_cfg,
         poses_wc=odo_out["poses_wc"],
         timestamps=odo_out["timestamps"],
         image_files=odo_out["image_files"],
         odometry_edges=odo_out["edges"],
-        output_dir=pipe_cfg.output_dir,
-        min_frame_gap=80,
-        pose_radius=0.40,
-        max_candidates_per_frame=1,
-        max_loop_step_metres=1.0,
-        iters=10,
-        w_odo=1.0,
-        w_loop=3.0,
+        output_dir=odom_cfg.output_dir / loop_cfg.output_subdir,
     )
 
     print("\nLoop closure completed.")
     print(f"Accepted loop edges: {lc_out['num_loop_edges']}")
-    print(f"Saved outputs to: {pipe_cfg.output_dir}")
+    print(f"Saved outputs to: {odom_cfg.output_dir / loop_cfg.output_subdir}")
 
 
 if __name__ == "__main__":

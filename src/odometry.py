@@ -1,3 +1,22 @@
+from __future__ import annotations
+
+"""
+Frame-to-frame visual odometry loop for the line-based RGB-D SLAM pipeline.
+
+This module runs the selected front-end on consecutive RGB frames, attempts
+relative pose estimation using the matched correspondences, applies acceptance
+rules to reject unreliable updates, accumulates accepted poses into a global
+trajectory, and saves debug outputs for later quantitative analysis.
+
+Inspiration:
+- Sequential odometry integration follows the standard rigid-transform chaining
+  used in visual odometry and SLAM pipelines.
+- The frame pairing and timestamp handling are built around the TUM RGB-D
+  dataset structure used in this project.
+- Relative pose estimation itself is delegated to the project pose-estimation
+  module, which implements the calibrated two-view workflow used in the report.
+"""
+
 import numpy as np
 from datetime import datetime
 
@@ -8,10 +27,54 @@ from src.pose_estimation import process_frame_pair_pose, make_T
 
 
 def yaw_from_R(R: np.ndarray) -> float:
+    """
+    Extract a planar yaw angle from a rotation matrix.
+
+    This is used when forming 2D odometry edges for the later pose-graph stage.
+
+    Args:
+        R: 3 x 3 rotation matrix.
+
+    Returns:
+        Yaw angle in radians.
+    """
     return float(np.arctan2(R[0, 2], R[2, 2]))
 
 
 def run_visual_odometry(dataset_cfg, odom_cfg):
+    """
+    Run frame-to-frame visual odometry on a TUM RGB-D sequence.
+
+    For each consecutive RGB frame pair, the function:
+    1. loads the corresponding RGB and nearest depth frames,
+    2. computes tentative and filtered correspondences using the selected front end,
+    3. attempts calibrated relative pose estimation,
+    4. rejects unreliable updates using the configured acceptance rules,
+    5. accumulates accepted poses into a world-frame trajectory,
+    6. records odometry edges and detailed debug statistics.
+
+    Rejected frame pairs are represented by repeated poses and zero odometry
+    edges so that later analysis can distinguish accepted and rejected updates.
+
+    Inspiration:
+    - The overall structure follows the standard sequential update pattern used
+      in visual odometry pipelines.
+    - The rejection logging and saved debug CSV are project-specific additions
+      introduced to diagnose failure modes such as too few Essential-matrix
+      inliers and insufficient metric depth support.
+
+    Args:
+        dataset_cfg: Dataset configuration object containing paths and intrinsics.
+        odom_cfg: Odometry configuration object containing thresholds and output settings.
+
+    Returns:
+        Dictionary containing:
+        - poses_wc: accumulated world-frame poses,
+        - timestamps: frame timestamps,
+        - image_files: RGB image paths,
+        - edges: 2D odometry edges for later loop closure,
+        - debug_rows: per-frame diagnostic records.
+    """
     rgb_files = load_rgb_sequence(dataset_cfg.rgb_dir)
     depth_ts, depth_files = build_depth_index(dataset_cfg.depth_dir)
 
@@ -65,9 +128,7 @@ def run_visual_odometry(dataset_cfg, odom_cfg):
             debug_rows.append(row)
             rejected_count += 1
 
-            print(
-                f"[{i:04d}->{i+1:04d}] REJECT frontend_failed"
-            )
+            print(f"[{i:04d}->{i+1:04d}] REJECT frontend_failed")
             continue
 
         row["raw_matches"] = len(front["raw_matches"])

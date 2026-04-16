@@ -1,22 +1,73 @@
+from __future__ import annotations
+
+"""
+Pose-estimation utilities for the line-based RGB-D SLAM pipeline.
+
+This module provides:
+- depth-image loading,
+- pixel back-projection into 3D camera coordinates,
+- calibrated two-view pose estimation using the Essential matrix,
+- depth-assisted metric translation estimation,
+- rigid-transform construction.
+
+Inspiration:
+- The calibrated two-view workflow follows the standard OpenCV pipeline based on
+  `findEssentialMat` and `recoverPose`.
+- Pixel back-projection follows the standard pinhole RGB-D camera model used in
+  visual odometry and RGB-D reconstruction.
+- The metric translation stage is a project-specific integration step that uses
+  valid depth-backed correspondences after rotation recovery.
+"""
+
 import cv2
 import numpy as np
 
 
-def load_depth_image(depth_path: str) -> np.ndarray | None:
+def load_depth_image(depth_path: str | None) -> np.ndarray | None:
+    """
+    Load a depth image from disk as a floating-point array.
+
+    Args:
+        depth_path: Path to the depth image file, or None.
+
+    Returns:
+        Depth image as a float32 NumPy array, or None if loading fails.
+    """
     if depth_path is None:
         return None
+
     d = cv2.imread(depth_path, cv2.IMREAD_UNCHANGED)
     if d is None:
         return None
+
     return d.astype(np.float32)
 
 
 def backproject_pixels_to_3d(
     uv: np.ndarray,
-    depth_img: np.ndarray,
+    depth_img: np.ndarray | None,
     K: np.ndarray,
-    depth_scale: float
+    depth_scale: float,
 ) -> tuple[np.ndarray | None, np.ndarray | None]:
+    """
+    Back-project image pixels into 3D camera-frame coordinates.
+
+    Inspiration:
+    - Standard RGB-D pinhole back-projection:
+      X = (u - cx) Z / fx, Y = (v - cy) Z / fy, Z = d / depth_scale.
+
+    Args:
+        uv: Array of image coordinates with shape (N, 2).
+        depth_img: Depth image corresponding to the frame.
+        K: 3 x 3 camera intrinsic matrix.
+        depth_scale: Depth scaling factor used by the dataset.
+
+    Returns:
+        Tuple containing:
+        - P: Array of 3D points with shape (N, 3), or None if no valid depth exists.
+        - valid: Boolean mask indicating which points have valid positive depth,
+          or None if back-projection fails.
+    """
     if depth_img is None:
         return None, None
 
@@ -46,12 +97,38 @@ def backproject_pixels_to_3d(
     return P, valid
 
 
-def estimate_pose_essential(A: np.ndarray, B: np.ndarray, K: np.ndarray):
+def estimate_pose_essential(
+    A: np.ndarray,
+    B: np.ndarray,
+    K: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray] | None:
+    """
+    Estimate relative pose from calibrated two-view correspondences.
+
+    Inspiration:
+    - OpenCV calibrated two-view workflow using `findEssentialMat` followed by
+      `recoverPose`.
+
+    Args:
+        A: Image points from frame 1 with shape (N, 2).
+        B: Corresponding image points from frame 2 with shape (N, 2).
+        K: 3 x 3 camera intrinsic matrix.
+
+    Returns:
+        Tuple containing:
+        - R: Recovered 3 x 3 rotation matrix,
+        - t: Recovered 3 x 1 translation direction,
+        - inlier_mask: Boolean mask of Essential-matrix inliers.
+
+        Returns None if Essential-matrix estimation fails.
+    """
     E, mask = cv2.findEssentialMat(
-        A, B, K,
+        A,
+        B,
+        K,
         method=cv2.RANSAC,
         prob=0.999,
-        threshold=1.0
+        threshold=1.0,
     )
 
     if E is None or mask is None:
@@ -70,7 +147,35 @@ def estimate_metric_translation(
     K: np.ndarray,
     depth_scale: float,
     R: np.ndarray,
-):
+) -> tuple[np.ndarray | None, int]:
+    """
+    Estimate metric translation using valid depth-backed correspondences.
+
+    The function back-projects the inlier image correspondences from both frames
+    into 3D, applies the recovered rotation to the first-frame points, and
+    estimates translation from the mean displacement between the rotated and
+    observed 3D points.
+
+    Inspiration:
+    - Standard RGB-D back-projection is used here.
+    - The final translation computation is a project-specific integration choice
+      for linking calibrated two-view pose with available depth measurements.
+
+    Args:
+        A: Inlier image points from frame 1.
+        B: Inlier image points from frame 2.
+        depth1: Depth image for frame 1.
+        depth2: Depth image for frame 2.
+        K: 3 x 3 camera intrinsic matrix.
+        depth_scale: Depth scaling factor.
+        R: Recovered relative rotation matrix.
+
+    Returns:
+        Tuple containing:
+        - t_metric: Estimated 3 x 1 metric translation vector, or None if
+          insufficient valid 3D correspondences are available.
+        - num_metric_points: Number of valid depth-backed correspondences used.
+    """
     P1, v1 = backproject_pixels_to_3d(A, depth1, K, depth_scale)
     P2, v2 = backproject_pixels_to_3d(B, depth2, K, depth_scale)
     if P1 is None or P2 is None:
@@ -97,7 +202,40 @@ def process_frame_pair_pose(
     depth_scale: float,
     min_essential_inliers: int,
     min_metric_points: int,
-):
+) -> tuple[dict | None, dict]:
+    """
+    Estimate pose for a single frame pair and return debug information.
+
+    The function:
+    1. estimates calibrated two-view pose using the Essential matrix,
+    2. checks the number of Essential-matrix inliers,
+    3. loads the corresponding depth images,
+    4. attempts metric translation recovery,
+    5. records detailed rejection reasons for later diagnosis.
+
+    Inspiration:
+    - The calibrated two-view stage follows the standard OpenCV Essential-matrix
+      workflow.
+    - The structured debug dictionary and explicit rejection categories are
+      project-specific additions used to support the odometry analysis chapter.
+
+    Args:
+        A: Matched image points from frame 1.
+        B: Matched image points from frame 2.
+        K: 3 x 3 camera intrinsic matrix.
+        depth1_path: Path to depth image for frame 1.
+        depth2_path: Path to depth image for frame 2.
+        depth_scale: Depth scaling factor.
+        min_essential_inliers: Minimum number of Essential-matrix inliers required.
+        min_metric_points: Minimum number of valid 3D correspondences required.
+
+    Returns:
+        Tuple containing:
+        - pose: Dictionary with pose outputs if estimation succeeds sufficiently,
+          or None if the Essential-matrix stage fails outright.
+        - debug: Dictionary containing intermediate counts, flags, norms, and
+          rejection reasons.
+    """
     debug = {
         "num_input_matches": int(len(A)),
         "essential_success": False,
@@ -146,7 +284,13 @@ def process_frame_pair_pose(
     B_in = B[inlier_mask]
 
     t_metric, num_metric = estimate_metric_translation(
-        A_in, B_in, depth1, depth2, K, depth_scale, R
+        A_in,
+        B_in,
+        depth1,
+        depth2,
+        K,
+        depth_scale,
+        R,
     )
 
     debug["num_metric_points"] = int(num_metric)
@@ -173,6 +317,16 @@ def process_frame_pair_pose(
 
 
 def make_T(R: np.ndarray, t: np.ndarray) -> np.ndarray:
+    """
+    Construct a 4 x 4 homogeneous rigid-body transform from rotation and translation.
+
+    Args:
+        R: 3 x 3 rotation matrix.
+        t: 3 x 1 or length-3 translation vector.
+
+    Returns:
+        4 x 4 homogeneous transformation matrix.
+    """
     T = np.eye(4, dtype=float)
     T[:3, :3] = R
     T[:3, 3] = t.reshape(3)
