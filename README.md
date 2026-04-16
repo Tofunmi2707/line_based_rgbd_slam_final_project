@@ -6,7 +6,7 @@
 ```markdown
 # Line-based RGB-D SLAM for low-texture indoor environments
 
-This repository contains the code, experiment scripts, and selected output structure for a third-year project on a **line-based RGB-D visual SLAM pipeline** for low-texture indoor environments using the **TUM RGB-D benchmark**.
+This repository contains the code, experiment scripts, and selected output structure for a third-year project on a line-based RGB-D visual SLAM pipeline for low-texture indoor environments using the TUM RGB-D benchmark.
 
 The project investigates how line detection, preprocessing, descriptor-based matching, geometric filtering, calibrated two-view pose estimation, loop-closure experimentation, and RGB-D fusion affect odometry, trajectory quality, and 3D reconstruction.
 
@@ -39,7 +39,6 @@ See `data/README.md` for the expected folder structure and dataset notes.
 
 ## Repository structure
 
-```text
 .
 ├── README.md
 ├── LICENSE
