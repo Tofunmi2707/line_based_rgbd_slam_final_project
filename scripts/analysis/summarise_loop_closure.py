@@ -3,18 +3,19 @@ from __future__ import annotations
 """
 Summarise loop-closure residual outputs and save report-ready figures.
 
-This script reads the saved loop-closure metrics produced by the backend stage
-and exports the main summary artefacts used in the dissertation. It is used to:
-- generate a residual summary table,
-- generate a plain-text summary,
-- save a before/after residual bar chart,
-- save a before/after trajectory plot.
+This script searches the results directory for all saved loop-closure metrics
+files and exports the main summary artefacts used in the dissertation. For each
+available dataset/method run, it generates:
+- a residual summary table,
+- a plain-text summary,
+- a before/after residual bar chart,
+- a before/after trajectory plot.
 
 Inspiration:
 - NumPy-based summary statistics and matplotlib plotting.
-- The specific residual groupings, output files, and reporting structure were
-  integrated within the present project for the loop-closure evaluation section
-  of the dissertation.
+- The multi-run result discovery and reporting structure were integrated within
+  the present project for the loop-closure evaluation section of the
+  dissertation.
 """
 
 from pathlib import Path
@@ -274,28 +275,24 @@ def load_metrics_file(npz_path: Path) -> dict:
     return out
 
 
-def find_latest_loop_metrics(results_dir: Path) -> tuple[Path,
-                                                         str,
-                                                         str] | None:
+def find_all_loop_metrics(results_dir: Path) -> list[tuple[Path, str, str]]:
     """
-    Find the most relevant saved loop-closure metrics file under the results
-    directory.
+    Find all saved loop-closure metrics files under the results directory.
 
-    The expected project layout is:
-    results/<dataset>/<method>/loop_closure/...
+    The expected project layouts are:
+    - results/<dataset>/<method>/loop_closure_metrics.npz
+    - results/<dataset>/<method>/loop_closure/loop_closure_metrics.npz
 
     Args:
         results_dir: Root results directory.
 
     Returns:
-        Tuple containing:
+        List of tuples:
         - metrics file path,
         - dataset name,
-        - method name,
-
-        or None if no loop-closure metrics file is found.
+        - method name.
     """
-    candidates: list[tuple[Path, str, str]] = []
+    found: list[tuple[Path, str, str]] = []
 
     if not results_dir.exists():
         raise FileNotFoundError(f"Results directory not found: {results_dir}")
@@ -312,54 +309,32 @@ def find_latest_loop_metrics(results_dir: Path) -> tuple[Path,
 
             direct_npz = method_dir / "loop_closure_metrics.npz"
             if direct_npz.exists():
-                candidates.append((direct_npz,
-                                  dataset_dir.name,
-                                  method_dir.name))
+                found.append((direct_npz, dataset_dir.name, method_dir.name))
 
             nested_npz = method_dir / "loop_closure" / "loop_closure_metrics.npz"  # noqa: E501
             if nested_npz.exists():
-                candidates.append((nested_npz,
-                                  dataset_dir.name,
-                                  method_dir.name))
+                found.append((nested_npz, dataset_dir.name, method_dir.name))
 
-    if not candidates:
-        return None
-
-    preferred = [
-        ("fr2_large_with_loop", "v2_lbd_endpoints"),
-        ("fr2_large_with_loop", "v3_geom_filter"),
-        ("fr2_large_with_loop", "v1_centroid"),
-    ]
-    for pref_dataset, pref_method in preferred:
-        for path, dataset, method in candidates:
-            if dataset == pref_dataset and method == pref_method:
-                return path, dataset, method
-
-    return candidates[0]
+    return found
 
 
-def main() -> None:
+def process_one_run(npz_path: Path,
+                    dataset_name: str,
+                    method_name: str) -> None:
     """
-    Generate the main loop-closure summary outputs from the saved metrics file.
+    Generate all loop-closure summary outputs for one dataset/method run.
+
+    Args:
+        npz_path: Path to the loop-closure metrics file.
+        dataset_name: Dataset name.
+        method_name: Method name.
 
     Returns:
         None
     """
-    found = find_latest_loop_metrics(RESULTS_DIR)
-    if found is None:
-        print(
-            "No loop_closure_metrics.npz file found under results/. "
-            "Run your loop-closure experiment first."
-        )
-        sys.exit(1)
-
-    npz_path, dataset_name, method_name = found
     metrics = load_metrics_file(npz_path)
 
-    run_dir = npz_path.parent
-    if npz_path.parent.name != method_name:
-        run_dir = npz_path.parent
-    out_dir = run_dir / "loop_closure_summary"
+    out_dir = npz_path.parent / "loop_closure_summary"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     save_residual_table(
@@ -395,19 +370,38 @@ def main() -> None:
         metrics["gt_xy"],
     )
 
-    print("Saved loop-closure summary outputs to:")
-    print(out_dir)
+    print(f"\nSaved loop-closure summary outputs to: {out_dir}")
     print(f"Dataset: {dataset_name}")
     print(f"Method : {method_name}")
     print(f"Number of odometry edges: {metrics['num_odom_edges']}")
     print(f"Number of loop edges: {metrics['num_loop_edges']}")
     print("Loop mean residual before:"
-          f" {safe_mean(metrics['loop_before']):.6f}")
+          f"{safe_mean(metrics['loop_before']):.6f}")
     print(f"Loop mean residual after : {safe_mean(metrics['loop_after']):.6f}")
     print(f"Loop median residual before: "
           f"{safe_median(metrics['loop_before']):.6f}")
-    print(f"Loop median residual after : "
+    print("Loop median residual after :"
           f"{safe_median(metrics['loop_after']):.6f}")
+
+
+def main() -> None:
+    """
+    Generate loop-closure summaries for all available dataset/method runs.
+
+    Returns:
+        None
+    """
+    runs = find_all_loop_metrics(RESULTS_DIR)
+
+    if not runs:
+        print(
+            "No loop_closure_metrics.npz files found under results/. "
+            "Run your loop-closure experiments first."
+        )
+        sys.exit(1)
+
+    for npz_path, dataset_name, method_name in runs:
+        process_one_run(npz_path, dataset_name, method_name)
 
 
 if __name__ == "__main__":
