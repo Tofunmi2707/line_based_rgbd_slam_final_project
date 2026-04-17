@@ -97,7 +97,7 @@ def make_rotating_gif(
 
     images = []
     for i in range(num_frames):
-        ctr.rotate(10.0, 0.0)
+        ctr.rotate(0.0, 10.0)
         vis.poll_events()
         vis.update_renderer()
 
@@ -110,20 +110,38 @@ def make_rotating_gif(
 
 
 def main() -> None:
-    """
-    Generate the rotating GIF for the selected reported reconstruction.
-
-    Returns:
-        None
-    """
     dataset_name = "fr1_desk"
     method_name = "v3_geom_filter"
 
-    ply_path = PROJECT_ROOT / "results" / dataset_name / method_name / "fused_cloud_3d.ply"  # noqa: E501
-    gif_path = PROJECT_ROOT / "results" / "gifs" / f"{dataset_name}_{method_name}_rotation.gif"  # noqa: E501
-    frame_dir = PROJECT_ROOT / "results" / "gifs" / f"{dataset_name}_{method_name}_frames"  # noqa: E501
+    ply_path = (
+        PROJECT_ROOT
+        / "results"
+        / dataset_name
+        / method_name
+        / "fusion_60_frames"
+        / "fused_cloud_3d.ply"
+    )
 
-    make_rotating_gif(ply_path, gif_path, frame_dir)
+    gif_path = (
+        PROJECT_ROOT
+        / "archive_sample_outputs"
+        / "gifs"
+        / "fr1_desk_v3_geom_filter_60_frames_vertical_rotation.gif"
+    )
+
+    frame_dir = (
+        PROJECT_ROOT
+        / "archive_sample_outputs"
+        / "gifs"
+        / "fr1_desk_v3_geom_filter_60_frames_vertical_frames"
+    )
+
+    make_rotating_gif(
+        ply_path=ply_path,
+        gif_path=gif_path,
+        frame_dir=frame_dir,
+    )
+
     print(f"Saved GIF to: {gif_path}")
 
 
