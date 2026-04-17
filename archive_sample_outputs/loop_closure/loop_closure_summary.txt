@@ -1,0 +1,16 @@
+Loop closure summary
+--------------------
+Number of odometry edges: 5181
+Number of loop edges: 565
+
+Odometry residuals
+  Mean before   : 0.020511
+  Median before : 0.000000
+  Mean after    : 0.022405
+  Median after  : 0.006047
+
+Loop residuals
+  Mean before   : 0.716728
+  Median before : 0.729715
+  Mean after    : 0.058769
+  Median after  : 0.035668

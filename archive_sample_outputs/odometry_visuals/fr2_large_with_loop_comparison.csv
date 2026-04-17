@@ -1,0 +1,4 @@
+dataset,method,accepted,rejected,acceptance_rate_percent,avg_raw_matches,avg_filtered_matches,avg_essential_inliers,avg_metric_points,rmse_m
+fr2_large_with_loop,v1_centroid,494,4687,9.53,548.21,216.52,13.28,6.20,1.2109
+fr2_large_with_loop,v2_lbd_endpoints,1795,3386,34.65,363.27,363.27,21.88,11.17,
+fr2_large_with_loop,v3_geom_filter,1778,3403,34.32,363.27,345.61,21.17,11.03,1.2109

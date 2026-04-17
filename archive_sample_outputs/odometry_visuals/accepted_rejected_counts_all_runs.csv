@@ -1,0 +1,13 @@
+dataset,method,total_pairs,accepted,rejected,acceptance_rate_percent,avg_raw_matches,avg_filtered_matches,avg_essential_inliers,avg_metric_points,avg_step_norm,rmse_m
+fr1_desk,v1_centroid,612,292,320,47.71,616.25,176.33,48.06,37.71,0.0188,0.7963
+fr1_desk,v2_lbd_endpoints,612,475,137,77.61,384.54,384.54,171.88,136.74,0.0226,0.6293
+fr1_desk,v3_geom_filter,612,464,148,75.82,384.54,366.40,162.46,129.19,0.0225,0.5522
+fr1_room,v1_centroid,1361,532,829,39.09,562.95,191.03,38.75,31.05,0.0165,1.0413
+fr1_room,v2_lbd_endpoints,1361,949,412,69.73,350.29,350.29,97.03,78.77,0.0260,1.0230
+fr1_room,v3_geom_filter,1361,888,473,65.25,350.29,330.53,93.75,76.21,0.0215,1.0052
+fr1_xyz,v1_centroid,797,274,523,34.38,744.73,271.71,43.52,35.88,0.0098,0.2202
+fr1_xyz,v2_lbd_endpoints,797,541,256,67.88,477.66,477.66,96.24,78.92,0.0159,0.1657
+fr1_xyz,v3_geom_filter,797,500,297,62.74,477.66,458.47,84.94,68.13,0.0142,0.2130
+fr2_large_with_loop,v1_centroid,5181,494,4687,9.53,548.21,216.52,13.28,6.20,0.0120,1.2109
+fr2_large_with_loop,v2_lbd_endpoints,5181,1795,3386,34.65,363.27,363.27,21.88,11.17,0.0320,
+fr2_large_with_loop,v3_geom_filter,5181,1778,3403,34.32,363.27,345.61,21.17,11.03,0.0236,1.2109

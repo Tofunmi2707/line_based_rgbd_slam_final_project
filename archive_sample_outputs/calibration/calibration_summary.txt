@@ -1,0 +1,16 @@
+Calibration summary
+-------------------
+Checkerboard: (9, 6)
+Total images: 17
+Successful detections: 17
+Detection methods used: ['findChessboardCornersSB']
+Mean reprojection error: 0.138745
+
+Camera matrix:
+[[3.06364123e+03 0.00000000e+00 1.51203600e+03]
+ [0.00000000e+00 3.06024680e+03 2.02606773e+03]
+ [0.00000000e+00 0.00000000e+00 1.00000000e+00]]
+
+Distortion coefficients:
+[[ 1.28737604e-01 -3.56003837e-01 -1.39150072e-04  6.05557034e-04
+   0.00000000e+00]]

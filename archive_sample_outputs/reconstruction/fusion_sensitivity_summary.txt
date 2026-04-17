@@ -1,0 +1,11 @@
+Dataset: fr1_desk
+Method: v3_geom_filter
+Frame settings tested: [10, 30, 60, 90, 120, 150, 180]
+
+10 frames: failed -> No valid fused point cloud points.
+30 frames: success -> outputs saved to C:\Users\Oluwatofunmi AYILOLA\OneDrive - University College London\Documents\3rd Year\3rd Year Project\line_based_slam\results\fr1_desk\v3_geom_filter\fusion_30_frames
+60 frames: success -> outputs saved to C:\Users\Oluwatofunmi AYILOLA\OneDrive - University College London\Documents\3rd Year\3rd Year Project\line_based_slam\results\fr1_desk\v3_geom_filter\fusion_60_frames
+90 frames: success -> outputs saved to C:\Users\Oluwatofunmi AYILOLA\OneDrive - University College London\Documents\3rd Year\3rd Year Project\line_based_slam\results\fr1_desk\v3_geom_filter\fusion_90_frames
+120 frames: success -> outputs saved to C:\Users\Oluwatofunmi AYILOLA\OneDrive - University College London\Documents\3rd Year\3rd Year Project\line_based_slam\results\fr1_desk\v3_geom_filter\fusion_120_frames
+150 frames: success -> outputs saved to C:\Users\Oluwatofunmi AYILOLA\OneDrive - University College London\Documents\3rd Year\3rd Year Project\line_based_slam\results\fr1_desk\v3_geom_filter\fusion_150_frames
+180 frames: success -> outputs saved to C:\Users\Oluwatofunmi AYILOLA\OneDrive - University College London\Documents\3rd Year\3rd Year Project\line_based_slam\results\fr1_desk\v3_geom_filter\fusion_180_frames

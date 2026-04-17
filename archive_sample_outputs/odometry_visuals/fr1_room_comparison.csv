@@ -1,0 +1,4 @@
+dataset,method,accepted,rejected,acceptance_rate_percent,avg_raw_matches,avg_filtered_matches,avg_essential_inliers,avg_metric_points,rmse_m
+fr1_room,v1_centroid,532,829,39.09,562.95,191.03,38.75,31.05,1.0413
+fr1_room,v2_lbd_endpoints,949,412,69.73,350.29,350.29,97.03,78.77,1.0230
+fr1_room,v3_geom_filter,888,473,65.25,350.29,330.53,93.75,76.21,1.0052
