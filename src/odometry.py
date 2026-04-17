@@ -17,13 +17,26 @@ Inspiration:
   module, which implements the calibrated two-view workflow used in the report.
 """
 
-import numpy as np
 from datetime import datetime
+import numpy as np
 
-from src.tum_io import load_rgb_sequence, build_depth_index
-from src.tum_io import nearest_depth_path, timestamp_from_path
-from src.line_frontend_v2_lbd_endpoints import process_frame_pair_frontend
+from src.tum_io import (
+    load_rgb_sequence,
+    build_depth_index,
+    nearest_depth_path,
+    timestamp_from_path,
+)
 from src.pose_estimation import process_frame_pair_pose, make_T
+
+from src.line_frontend_v1_centroid import (
+    process_frame_pair_frontend as frontend_v1_centroid,
+)
+from src.line_frontend_v2_lbd_endpoints import (
+    process_frame_pair_frontend as frontend_v2_lbd_endpoints,
+)
+from src.line_frontend_v3_geom_filter import (
+    process_frame_pair_frontend as frontend_v3_geom_filter,
+)
 
 
 def yaw_from_R(R: np.ndarray) -> float:
@@ -41,6 +54,28 @@ def yaw_from_R(R: np.ndarray) -> float:
     return float(np.arctan2(R[0, 2], R[2, 2]))
 
 
+def get_frontend_fn(method_name: str):
+    """
+    Select the frontend function corresponding to the configured method name.
+
+    Args:
+        method_name: Name of the odometry frontend variant.
+
+    Returns:
+        Frontend processing function.
+
+    Raises:
+        ValueError: If the method name is not recognised.
+    """
+    if method_name == "v1_centroid":
+        return frontend_v1_centroid
+    if method_name == "v2_lbd_endpoints":
+        return frontend_v2_lbd_endpoints
+    if method_name == "v3_geom_filter":
+        return frontend_v3_geom_filter
+    raise ValueError(f"Unknown method_name: {method_name}")
+
+
 def run_visual_odometry(dataset_cfg, odom_cfg):
     """
     Run frame-to-frame visual odometry on a TUM RGB-D sequence.
@@ -56,13 +91,6 @@ def run_visual_odometry(dataset_cfg, odom_cfg):
 
     Rejected frame pairs are represented by repeated poses and zero odometry
     edges so that later analysis can distinguish accepted and rejected updates.
-
-    Inspiration:
-    - The overall structure follows the standard sequential update pattern used
-      in visual odometry pipelines.
-    - The rejection logging and saved debug CSV are project-specific additions
-      introduced to diagnose failure modes such as too few Essential-matrix
-      inliers and insufficient metric depth support.
 
     Args:
         dataset_cfg: Dataset configuration object containing paths and
@@ -82,6 +110,10 @@ def run_visual_odometry(dataset_cfg, odom_cfg):
     depth_ts, depth_files = build_depth_index(dataset_cfg.depth_dir)
 
     odom_cfg.output_dir.mkdir(parents=True, exist_ok=True)
+
+    frontend_fn = get_frontend_fn(odom_cfg.method_name)
+    print(f"Using frontend method: {odom_cfg.method_name}")
+    print(f"Frontend function module: {frontend_fn.__module__}")
 
     poses_wc = [np.eye(4, dtype=float)]
     timestamps = [timestamp_from_path(rgb_files[0])]
@@ -116,7 +148,7 @@ def run_visual_odometry(dataset_cfg, odom_cfg):
             "reject_reason": None,
         }
 
-        front = process_frame_pair_frontend(str(f1), str(f2), odom_cfg)
+        front = frontend_fn(str(f1), str(f2), odom_cfg)
         if front is None:
             row["reject_reason"] = "frontend_failed"
 
@@ -126,7 +158,7 @@ def run_visual_odometry(dataset_cfg, odom_cfg):
                 "i": i,
                 "j": i + 1,
                 "z": np.array([0.0, 0.0, 0.0], dtype=float),
-                "type": "odo"
+                "type": "odo",
             })
             debug_rows.append(row)
             rejected_count += 1
@@ -160,7 +192,7 @@ def run_visual_odometry(dataset_cfg, odom_cfg):
                 "i": i,
                 "j": i + 1,
                 "z": np.array([0.0, 0.0, 0.0], dtype=float),
-                "type": "odo"
+                "type": "odo",
             })
             debug_rows.append(row)
             rejected_count += 1
@@ -182,7 +214,7 @@ def run_visual_odometry(dataset_cfg, odom_cfg):
                 "i": i,
                 "j": i + 1,
                 "z": np.array([0.0, 0.0, 0.0], dtype=float),
-                "type": "odo"
+                "type": "odo",
             })
             debug_rows.append(row)
             rejected_count += 1
@@ -207,7 +239,7 @@ def run_visual_odometry(dataset_cfg, odom_cfg):
                 "i": i,
                 "j": i + 1,
                 "z": np.array([0.0, 0.0, 0.0], dtype=float),
-                "type": "odo"
+                "type": "odo",
             })
             debug_rows.append(row)
             rejected_count += 1
@@ -235,7 +267,7 @@ def run_visual_odometry(dataset_cfg, odom_cfg):
             "i": i,
             "j": i + 1,
             "z": np.array([dx, dz, dth], dtype=float),
-            "type": "odo"
+            "type": "odo",
         })
 
         row["accepted"] = True
@@ -258,11 +290,12 @@ def run_visual_odometry(dataset_cfg, odom_cfg):
         odom_cfg.output_dir / "poses_3d.npz",
         poses_wc=poses_wc,
         timestamps=timestamps,
-        image_files=np.array([str(p) for p in rgb_files], dtype=object)
+        image_files=np.array([str(p) for p in rgb_files], dtype=object),
     )
 
     timestamp_str = f"{datetime.now():%Y%m%d_%H%M%S}"
     debug_path = odom_cfg.output_dir / f"odometry_debug_{timestamp_str}.csv"
+
     with open(debug_path, "w", encoding="utf-8") as f:
         f.write(
             "frame_i,frame_j,timestamp_i,timestamp_j,"
