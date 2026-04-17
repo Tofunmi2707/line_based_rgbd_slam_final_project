@@ -25,7 +25,6 @@ results/
 
 # Point clouds / media
 *.ply
-*.gif
 
 # Jupyter
 .ipynb_checkpoints/
